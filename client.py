@@ -26,41 +26,39 @@ async def main():
             await session.initialize()
             print("Bağlantı başarılı! Gemini ile sohbet edebilirsin. (Çıkmak için 'q' yaz)")
 
-            # Gemini'a vereceğimiz tool tanımları
-            # (Gerçek dünyada bunları `await session.list_tools()` ile MCP'den dinamik çekeriz)
-            tool_definitions = [
-                types.FunctionDeclaration(
-                    name="dosya_yaz",
-                    description="Belirtilen isimde yeni bir dosya açar ve içine metin yazar.",
-                    parameters=types.Schema(
-                        type=types.Type.OBJECT,
-                        properties={
-                            "dosya_adi": types.Schema(type=types.Type.STRING),
-                            "icerik": types.Schema(type=types.Type.STRING),
-                        },
-                        required=["dosya_adi", "icerik"]
+            # MCP Server'dan araçları dinamik olarak çek ve Gemini formatına dönüştür
+            mcp_tools = await session.list_tools()
+            TYPE_MAP = {
+                "string":  types.Type.STRING,
+                "integer": types.Type.INTEGER,
+                "number":  types.Type.NUMBER,
+                "boolean": types.Type.BOOLEAN,
+                "array":   types.Type.ARRAY,
+                "object":  types.Type.OBJECT,
+            }
+            tool_definitions = []
+            for tool in mcp_tools.tools:
+                schema = tool.inputSchema or {}
+                raw_props = schema.get("properties", {})
+                props = {
+                    pname: types.Schema(
+                        type=TYPE_MAP.get(pdef.get("type", "string"), types.Type.STRING)
                     )
-                ),
-                types.FunctionDeclaration(
-                    name="dosya_oku",
-                    description="Belirtilen dosyanın içeriğini okur.",
-                    parameters=types.Schema(
-                        type=types.Type.OBJECT,
-                        properties={
-                            "dosya_adi": types.Schema(type=types.Type.STRING),
-                        },
-                        required=["dosya_adi"]
-                    )
-                ),
-                types.FunctionDeclaration(
-                    name="notlari_listele",
-                    description="Mevcut klasördeki tüm .txt not dosyalarını listeler. Parametre gerekmez.",
-                    parameters=types.Schema(
-                        type=types.Type.OBJECT,
-                        properties={}
+                    for pname, pdef in raw_props.items()
+                }
+                required = schema.get("required") or None
+                tool_definitions.append(
+                    types.FunctionDeclaration(
+                        name=tool.name,
+                        description=tool.description or "",
+                        parameters=types.Schema(
+                            type=types.Type.OBJECT,
+                            properties=props,
+                            required=required
+                        )
                     )
                 )
-            ]
+            print(f"[SİSTEM] {len(tool_definitions)} araç yüklendi: {[t.name for t in tool_definitions]}")
             
             tool_config = types.Tool(function_declarations=tool_definitions)
 
