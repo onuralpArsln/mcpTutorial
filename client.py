@@ -62,36 +62,47 @@ async def main():
             
             tool_config = types.Tool(function_declarations=tool_definitions)
 
+            # Sohbet geçmişini hatırlayan bir async chat oturumu başlat
+            chat = gemini_client.aio.chats.create(
+                model='gemini-2.5-flash',
+                config=types.GenerateContentConfig(
+                    tools=[tool_config],
+                )
+            )
+
             # 3. Sohbet Döngüsü
             while True:
                 user_input = input("\nSen: ")
                 if user_input.lower() in ['q', 'çıkış']:
                     break
 
-                # Gemini'a mesajı ve toolları gönderiyoruz
-                response = gemini_client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=user_input,
-                    config=types.GenerateContentConfig(
-                        tools=[tool_config],
-                    )
-                )
+                # Mesajı chat oturumuna gönder (geçmiş otomatik korunur)
+                response = await chat.send_message(user_input)
 
-                # Gemini bir tool çağırmak istedi mi kontrol edelim
-                if response.function_calls:
+                # Tool çağrısı varsa işle ve sonucu Gemini'ye geri bildir
+                while response.function_calls:
+                    tool_parts = []
                     for function_call in response.function_calls:
                         tool_name = function_call.name
-                        args = function_call.args
-
+                        args = dict(function_call.args)
                         print(f"\n[SİSTEM] Gemini '{tool_name}' aracını kullanıyor... Argümanlar: {args}")
 
-                        # MCP Server üzerinden ilgili aracı çalıştır
                         mcp_result = await session.call_tool(tool_name, arguments=args)
-                        
-                        # Sonucu ekrana ve (opsiyonel olarak) tekrar modele bildirebilirsin
-                        print(f"[MCP SONUÇ]: {mcp_result.content[0].text}")
-                else:
-                    # Normal metin cevabı
+                        sonuc = mcp_result.content[0].text
+                        print(f"[MCP SONUÇ]: {sonuc}")
+
+                        tool_parts.append(
+                            types.Part.from_function_response(
+                                name=tool_name,
+                                response={"result": sonuc}
+                            )
+                        )
+
+                    # Tool sonuçlarını Gemini'ye ilet → nihai yanıtı al
+                    response = await chat.send_message(tool_parts)
+
+                # Metin yanıtını göster
+                if response.text:
                     print(f"\nGemini: {response.text}")
 
 if __name__ == "__main__":
