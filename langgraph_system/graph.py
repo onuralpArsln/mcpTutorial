@@ -15,8 +15,14 @@ class AgentState(TypedDict):
     confidence_score: int
     compliance_approved: bool
 
-def create_mcp_graph(model: BaseChatModel, tools: list):
-    """Creates an advanced LangGraph based on the Final Target workflow."""
+def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel, tools: list):
+    """Creates an advanced LangGraph based on the Final Target workflow.
+    
+    Args:
+        model_with_tools: LLM bound to tools — used for intent analysis and tool selection.
+        model_plain: Plain LLM with no tools — used for reasoning to guarantee text output.
+        tools: List of LangChain tools from MCP server.
+    """
     
     # Node 1: Intent Understanding
     async def intent_analyzer(state: AgentState):
@@ -26,7 +32,7 @@ def create_mcp_graph(model: BaseChatModel, tools: list):
         - 'optimize'   : Düşük performans düzelt, bid azalt, verimsizlik gider
         - 'info_only'  : Ürün listesi, genel bilgi, sistem soruları
         Sadece tek kelime yaz. Başka bir şey yazma."""
-        response = await model.ainvoke([HumanMessage(content=prompt)] + state['messages'])
+        response = await model_with_tools.ainvoke([HumanMessage(content=prompt)] + state['messages'])
         return {"intent": response.content.strip().lower()}
 
     # Node 2: Tool Selection (Fixed with persistence)
@@ -35,24 +41,25 @@ def create_mcp_graph(model: BaseChatModel, tools: list):
         prompt = f"""Kullanıcı niyeti: '{intent}'.
         Bu niyete uygun araçları seç ve çağır:
         - 'scale_up'  : 'get_performance_metrics' ve 'get_strategy_rules(intent_type="scale_up")' çağır.
-        - 'analyze'   : SADECE 'get_performance_metrics' çağır. Başka araç kullanma.
+        - 'analyze'   : 'get_performance_metrics' VE 'get_strategy_rules(intent_type="analiz")' çağır. İkisini de mutlaka çağır.
         - 'optimize'  : 'get_performance_metrics', 'get_strategy_rules(intent_type="optimize")' ve 'run_pattern_recognition(data_summary="ROAS:3.2")' çağır.
         - 'info_only' : Ürün sorusu ise 'list_products', maliyet sorusu ise 'get_product_costs(product_id="P001")', sistem sorusu ise 'system_info' çağır.
         
         Şimdi uygun araç(ları) çağır."""
         
-        response = await model.ainvoke([HumanMessage(content=prompt)] + state['messages'])
+        response = await model_with_tools.ainvoke([HumanMessage(content=prompt)] + state['messages'])
         return {"messages": [response]}
 
-    # Node 3: Analysis & Reasoning (Now has access to full history)
+    # Node 3: Analysis & Reasoning — uses model_plain (no tools) to guarantee text output
     async def reasoning_engine(state: AgentState):
         prompt = """Verileri analiz et ve kullanıcıya Türkçe, net bir yanıt ver. 
         Eğer ürün listesi geldiyse mutlaka listele. 
         Eğer maliyet verisi varsa tablo gibi sun. 
-        İnsani ve profesyonel bir üslup kullan."""
+        Eğer performans verisi varsa ilgili stratejik kurallarla karşılaştırarak yorum yap.
+        İnsani ve profesyonel bir üslup kullan. Kesinlikle araç çağırma, sadece metin yaz."""
         
-        # State['messages'] contains: [User prompt, Tool Selector AI Message, Tool Output Message]
-        response = await model.ainvoke(state['messages'] + [HumanMessage(content=prompt)])
+        # model_plain has no tools bound → always returns text content
+        response = await model_plain.ainvoke(state['messages'] + [HumanMessage(content=prompt)])
         return {"messages": [response]}
 
     # Node 4: Confidence & Compliance Check

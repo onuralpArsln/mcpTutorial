@@ -84,20 +84,29 @@ def get_product_costs(product_id: str = "P001") -> str:
 
 @mcp.tool()
 def get_strategy_rules(intent_type: str) -> str:
-    """Returns business strategy rules based on the detected intent."""
-    rules = {
-        "scale_up": [
-            "Rule 1: If ROAS > 3.0, increase budget by 20%.",
-            "Rule 2: Max daily budget increase is $500.",
-            "Rule 3: Maintain CVR above 2%."
-        ],
-        "optimize": [
-            "Rule 1: If ROAS < 2.0, decrease bid by 15%.",
-            "Rule 2: Pause keywords with 0 conversions and >$50 spend."
-        ]
-    }
-    selected_rules = rules.get(intent_type.lower(), ["No specific rules found for this intent. Use default cautious optimization."])
-    return f"Applicable Rules for {intent_type}: {selected_rules}"
+    """Reads business strategy rules from the knowledge base (rules.txt) for the given intent type."""
+    try:
+        rules_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "knowledge", "rules.txt")
+        
+        with open(rules_file, "r", encoding="utf-8") as f:
+            content = f.read()
+        
+        # Parse the file: find the [intent_type] section
+        tag = f"[{intent_type.lower()}]"
+        if tag not in content:
+            return f"No rules found for intent: '{intent_type}'. Available: [analiz], [reklam_acma], [indirim_kupon], [scale_up], [optimize]"
+        
+        # Extract the block between this tag and the next tag
+        start = content.index(tag) + len(tag)
+        next_tag = content.find("[", start)
+        block = content[start:next_tag].strip() if next_tag != -1 else content[start:].strip()
+        
+        return f"Strateji Kuralları [{intent_type}]:\n{block}"
+    
+    except FileNotFoundError:
+        return "Error: rules.txt bulunamadı. Lütfen langgraph_system/knowledge/rules.txt dosyasının mevcut olduğundan emin olun."
+    except Exception as e:
+        return f"Error reading rules: {str(e)}"
 
 @mcp.tool()
 def run_pattern_recognition(data_summary: str) -> str:

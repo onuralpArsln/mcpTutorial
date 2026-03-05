@@ -1,0 +1,41 @@
+# E-Ticaret Strateji Kural Kütüphanesi
+# Format: [konu] etiketiyle bölümlere ayrılmış kurallar
+# Bu dosyayı düzenleyerek kuralları güncelleyebilirsiniz.
+
+[analiz]
+- CTR %1.5'in altındaysa reklam kreatifi yenilenmelidir.
+- ROAS 3.0'ın altına düşerse kampanya bütçesi azaltılmalıdır.
+- Dönüşüm Oranı (CVR) %2.0'ın altındaysa açılış sayfası (landing page) gözden geçirilmelidir.
+- 14 günlük ROAS trendi negatifse büyüme planı askıya alınmalıdır.
+- Harcama yüksek ama satış yoksa hedef kitle yanlış seçilmiş olabilir.
+- Satış sayısı 50'nin altındaysa istatistiksel karar için veri yetersizdir, beklenmesi önerilir.
+
+[reklam_acma]
+- Yeni kampanya açmadan önce hedef kitle büyüklüğü 100.000 kişinin üzerinde olmalıdır.
+- Aylık reklam bütçesi minimum 3.000 TL olarak belirlenmelidir.
+- İlk 3 günde ROAS 1.5'in altındaysa kampanya durdurulmalı ve revize edilmelidir.
+- A/B testi yapılmadan tek bir kreatifte tüm bütçe kullanılmamalıdır.
+- Reklam metni ürün faydalarını açıkça belirtmelidir; özellik değil, fayda satılır.
+- Mobil ve masaüstü için ayrı reklam görselleri hazırlanması önerilir.
+
+[indirim_kupon]
+- İndirim oranı ne olursa olsun kâr marjının %20'nin altına düşülmesine izin verilmemelidir.
+- Kupon geçerlilik süresi maksimum 72 saat olarak tutulmalıdır; aciliyet hissi yaratır.
+- İndirim kampanyası aktifken aynı anda bütçe artışı (scale-up) yapılmamalıdır.
+- Kupon sadece belirli bir ürün kategorisine özel yapılırsa daha yüksek dönüşüm sağlanır.
+- Tekrar eden müşterilere özel indirim, ilk kez alışveriş yapanlara verilen indirimden farklı olmalıdır.
+- Sepet tutarı bazlı eşikli indirimler (200 TL üzeri %15 indirim) ortalama sepet değerini artırır.
+
+[scale_up]
+- ROAS > 3.0 ise bütçeyi %20 oranında artırmak güvenlidir.
+- Günlük bütçe artışı bir seferde maksimum 500 TL olmalıdır; ani değişiklikler algoritmaları bozar.
+- Dönüşüm Oranı (CVR) %2.0'ın üzerinde olmalıdır, aksi halde büyüme verimsiz olur.
+- Stok seviyesi yetersizse büyüme yapılmamalıdır; teslimat süresi uzarsa yorumlar bozulur.
+- Yükselen ROAS trendinde önce bütçeyi artır, ardından yeni reklam seti açmayı değerlendir.
+
+[optimize]
+- ROAS < 2.0 ise teklif (bid) %15 oranında düşürülmelidir.
+- 50 TL üzerinde harcama yapıp hiç dönüşüm üretmeyen anahtar kelimeler durdurulmalıdır.
+- Düşük CTR'a sahip (%1.0 altı) reklamlar yaratıcı içerik yenilenmesi için önlemeye alınmalıdır.
+- Pahalı demografik segmentlerde dönüşüm yoksa o segmentten çıkılmalıdır.
+- Yüksek gösterim (impression) ama düşük tıklama oranı varsa reklam başlığı değiştirilmelidir.

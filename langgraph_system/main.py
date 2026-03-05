@@ -35,11 +35,13 @@ async def run_system():
             print(f"Loaded {len(tools)} tools dynamically: {[t.name for t in tools]}")
 
             # 4. Model Setup (Gemini)
-            # This model is model-agnostic in the graph, so we could switch to Claude easily
-            model = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite").bind_tools(tools)
+            # Two models: one with tools for selection, one plain for reasoning
+            model_name = "gemini-2.5-flash-lite"
+            model_with_tools = ChatGoogleGenerativeAI(model=model_name).bind_tools(tools)
+            model_plain = ChatGoogleGenerativeAI(model=model_name)
             
             # 5. Graph Creation
-            app = create_mcp_graph(model, tools)
+            app = create_mcp_graph(model_with_tools, model_plain, tools)
 
             # 6. Execution Loop
             print("\nFinal Target LangGraph + Mock MCP Ready. (Type 'exit' to quit)")
