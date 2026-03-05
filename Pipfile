@@ -8,8 +8,10 @@ mcp = "*"
 google-genai = "*"
 pydantic = "*"
 python-dotenv = "*"
+langgraph = "*"
+langchain-google-genai = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.14"
+python_version = "3.12"

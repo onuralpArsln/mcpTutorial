@@ -35,12 +35,26 @@ MCP sunucusu burada çalışır. Yeni toollar buraya eklenir.
 
 
 # LangGraphMCP+RagClient
+### LangGraph + MCP + RAG Nasıl Çalışır?
 
+Bu sistem, yapay zekanın yerel araçlarla nasıl etkileşime girdiğini üç katmanda yönetir:
 
+1.  **Beyin (LangGraph):** İş akışını ve "karar verme" sürecini yönetir. Kullanıcının ne istediğini anlar ve hangi aracın ne zaman kullanılacağına karar verir.
+2.  **Kablo (MCP Adapter):** MCP sunucusundan gelen ham araçları, LangGraph'ın (Gemini/Claude) anlayabileceği "LangChain Tool" formatına otomatik olarak dönüştürür.
+3.  **Eller (MCP Server):** Gerçek işi yapan kısımdır. Dosya yazma, okuma veya RAG (Bilgi tabanı) araması gibi işlemleri gerçekleştirir.
 
+#### Kritik Adım: Tool Seçimi
+Niyet anlaşıldıktan sonra, LLM hangi araçların (Performance, Rules, Pattern vb.) kullanılacağına karar verir. Bu adım, "Eller"e hangi işi yapacağını söyleyen "Sinir Sistemi" gibidir.
 
-
-
+```mermaid
+graph LR
+    A[Kullanıcı İstemi] --> B[LangGraph Brain]
+    B <--> C{MCP Adapter}
+    C <--> D[MCP Server]
+    D --- E[Dosya İşlemleri]
+    D --- F[RAG Araması]
+    D --- G[Sistem Bilgisi]
+```
 
 # Final Target
 

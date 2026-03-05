@@ -36,31 +36,81 @@ async def run_system():
 
             # 4. Model Setup (Gemini)
             # This model is model-agnostic in the graph, so we could switch to Claude easily
-            model = ChatGoogleGenerativeAI(model="gemini-2.0-flash").bind_tools(tools)
-
+            model = ChatGoogleGenerativeAI(model="gemini-2.5-flash-lite").bind_tools(tools)
+            
             # 5. Graph Creation
             app = create_mcp_graph(model, tools)
 
             # 6. Execution Loop
-            print("\nLangGraph + MCP System Ready. (Type 'exit' to quit)")
+            print("\nFinal Target LangGraph + Mock MCP Ready. (Type 'exit' to quit)")
+            print("Try: 'Scale up my campaign' or 'Optimize performance'")
+            
             while True:
-                user_input = input("\nYou: ")
-                if user_input.lower() in ("exit", "quit", "q"):
+                user_msg = input("\nYou: ")
+                if user_msg.lower() in ("exit", "quit", "q"):
                     break
 
-                inputs = {"messages": [HumanMessage(content=user_input)]}
+                # Initialize State
+                inputs = {
+                    "messages": [HumanMessage(content=user_msg)],
+                    "intent": "unknown",
+                    "metrics": {},
+                    "rules": [],
+                    "confidence_score": 0,
+                    "compliance_approved": False
+                }
                 
                 # Run the graph
-                async for output in app.astream(inputs):
-                    # For brevity, we just print the outgoing messages from nodes
-                    for key, value in output.items():
-                        if "messages" in value:
-                            last_msg = value["messages"][-1]
-                            if last_msg.content:
-                                print(f"\n[{key}]: {last_msg.content}")
-                            if hasattr(last_msg, 'tool_calls') and last_msg.tool_calls:
-                                for tc in last_msg.tool_calls:
-                                    print(f"[{key}]: calling tool '{tc['name']}' with {tc['args']}")
+                print("\n" + "="*50)
+                print("🚀 FLOW STARTED: Processing your request...")
+                print("="*50)
+
+                async for output in app.astream(inputs, stream_mode="updates"):
+                    for node, data in output.items():
+                        print(f"\n📍 [BAŞAMAK]: {node.upper()}")
+                        
+                        if node == "intent":
+                            print(f"   🔍 Niyet Analiz Edildi: {data['intent']}")
+                        
+                        elif node == "tool_selection":
+                            print(f"   🎯 Araç Seçimi Yapılıyor...")
+                            if "messages" in data:
+                                m = data["messages"][-1]
+                                if hasattr(m, 'tool_calls') and m.tool_calls:
+                                    tools_to_call = [tc['name'] for tc in m.tool_calls]
+                                    print(f"   📋 Seçilen Araçlar: {tools_to_call}")
+
+                        elif node == "tools":
+                            print(f"   🛠️ Araçlar Kullanıldı (MCP Server)")
+                            if "messages" in data:
+                                for msg in data["messages"]:
+                                    if hasattr(msg, 'content') and msg.content:
+                                        print(f"   ✅ Veri Çekildi: {msg.content[:100]}...")
+
+                        elif node == "reasoning":
+                            print(f"   🧠 Yapay Zeka Akıl Yürütüyor...")
+                            if "messages" in data:
+                                m = data["messages"][-1]
+                                content = m.content
+                                # Handle list-based content (some models return blocks)
+                                if isinstance(content, list):
+                                    text_parts = [part.get("text", "") for part in content if isinstance(part, dict) and part.get("type") == "text"]
+                                    clean_text = "".join(text_parts).strip()
+                                else:
+                                    clean_text = str(content).strip()
+                                
+                                print(f"   📝 Öneri:\n\n{clean_text}")
+
+                        elif node == "evaluator":
+                            print(f"   ⚖️ Güven Puanlaması Yapılıyor...")
+                            if "confidence_score" in data:
+                                score = data['confidence_score']
+                                status = "✅ GÜVENLİ" if score >= 70 else "⚠️ DÜŞÜK GÜVEN"
+                                print(f"   📊 Puan: {score}/100 -> {status}")
+
+                print("\n" + "="*50)
+                print("🏁 FLOW COMPLETED")
+                print("="*50)
 
 if __name__ == "__main__":
     try:

@@ -7,6 +7,15 @@ import platform
 # Specialized server for LangGraph experimentation
 mcp = FastMCP("LangGraph-Experimental-Server")
 
+# --- Mock Product Database ---
+PRODUCTS_DB = {
+    "P001": {"name": "Eco-Friendly Water Bottle", "category": "Home", "cost": 15, "price": 45},
+    "P002": {"name": "Wireless Headphones", "category": "Electronics", "cost": 120, "price": 299},
+    "P003": {"name": "Ergonomic Chair", "category": "Office", "cost": 85, "price": 249},
+    "P004": {"name": "Solar Charger", "category": "Outdoor", "cost": 35, "price": 89},
+    "P005": {"name": "Fitness Tracker", "category": "Health", "cost": 55, "price": 129}
+}
+
 # --- Core Tools (copied from original for baseline) ---
 
 @mcp.tool()
@@ -37,21 +46,66 @@ def notlari_listele() -> str:
 # --- Experimental Tools (New!) ---
 
 @mcp.tool()
-def rag_search(query: str) -> str:
-    """Simulates a RAG (Retrieval Augmented Generation) search in a knowledge base."""
-    # This is a mock for now
-    knowledge_base = {
-        "mcp": "Model Context Protocol (MCP) is an open standard that enables developers to build secure, two-way integrations between their data sources and AI models.",
-        "langgraph": "LangGraph is a library for building stateful, multi-actor applications with LLMs, used to create agent and multi-agent workflows.",
-        "gemini": "Gemini is a family of generative AI models developed by Google."
+def get_performance_metrics(range_type: str = "last_7_days") -> str:
+    """Returns mock performance metrics (ROAS, Conversion Rate, CPC, etc.) for a given range."""
+    # Mock data based on the ReadMe state diagram
+    metrics = {
+        "ROAS": 3.2,
+        "Conversion_Rate": "2.4%",
+        "Sales_Count": 150,
+        "Revenue": 15000,
+        "Ad_Spend": 4687.5,
+        "CTR": "1.8%",
+        "Range": range_type
     }
+    return f"Performance Data: {metrics}"
+
+@mcp.tool()
+def list_products() -> str:
+    """Lists all products available in the mock database."""
+    return "Available Products:\n" + "\n".join([f"[{id}] {p['name']} ({p['category']})" for id, p in PRODUCTS_DB.items()])
+
+@mcp.tool()
+def get_product_costs(product_id: str = "P001") -> str:
+    """Returns mock cost information for a specific product ID."""
+    p = PRODUCTS_DB.get(product_id.upper())
+    if not p:
+        return f"Error: Product ID {product_id} not found."
     
-    query_lower = query.lower()
-    for key, value in knowledge_base.items():
-        if key in query_lower:
-            return f"[RAG RESULT for '{key}']: {value}"
-    
-    return f"No specific RAG entry found for '{query}'. Try searching for 'mcp', 'langgraph', or 'gemini'."
+    margin = ((p['price'] - p['cost']) / p['price']) * 100
+    costs = {
+        "Product_Name": p['name'],
+        "Unit_Cost": p['cost'],
+        "Sale_Price": p['price'],
+        "Profit_Margin": f"{margin:.1f}%",
+        "Product_ID": product_id
+    }
+    return f"Cost Data: {costs}"
+
+@mcp.tool()
+def get_strategy_rules(intent_type: str) -> str:
+    """Returns business strategy rules based on the detected intent."""
+    rules = {
+        "scale_up": [
+            "Rule 1: If ROAS > 3.0, increase budget by 20%.",
+            "Rule 2: Max daily budget increase is $500.",
+            "Rule 3: Maintain CVR above 2%."
+        ],
+        "optimize": [
+            "Rule 1: If ROAS < 2.0, decrease bid by 15%.",
+            "Rule 2: Pause keywords with 0 conversions and >$50 spend."
+        ]
+    }
+    selected_rules = rules.get(intent_type.lower(), ["No specific rules found for this intent. Use default cautious optimization."])
+    return f"Applicable Rules for {intent_type}: {selected_rules}"
+
+@mcp.tool()
+def run_pattern_recognition(data_summary: str) -> str:
+    """Simulates an ML tool that identifies patterns/trends in performance data."""
+    # Mock pattern detection logic
+    if "3.2" in data_summary:
+        return "Pattern Detected: Positive trend in ROAS identified. Consistent performance over the weekend. No anomalies found."
+    return "Pattern Detected: Fluctuating performance. Recommendation: Collect more data before scaling."
 
 @mcp.tool()
 def system_info() -> str:
