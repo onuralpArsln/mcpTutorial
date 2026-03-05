@@ -40,7 +40,7 @@ MCP sunucusu burada çalışır. Yeni toollar buraya eklenir.
 
 
 ## workflow
-```graph LR
+graph LR
     %% Düğüm Tanımlamaları
     A["Kullanıcı İstemi"]
     B["Kullanıcı Niyeti<br>anlaşılması"]
@@ -82,7 +82,7 @@ MCP sunucusu burada çalışır. Yeni toollar buraya eklenir.
 
     class A,B,C,D,E,F,G,I,K blueBox;
     class H,J pinkDiamond;
-```
+
 
 
 ## state
