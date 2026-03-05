@@ -39,100 +39,154 @@ MCP sunucusu burada çalışır. Yeni toollar buraya eklenir.
 
 
 
-## workflow
-graph LR
-    %% Düğüm Tanımlamaları
-    A["Kullanıcı İstemi"]
-    B["Kullanıcı Niyeti<br>anlaşılması"]
-    C["Data Toplanması<br>(Tool seçimi)"]
-    D["Duruma uygun<br>strateji<br>kuralının<br>okunması"]
-    E["MCP<br>Dataların<br>toollar ile<br>çekilmesi"]
-    F["Analiz 1 MCP<br>ile ML Toolu"]
-    G["Analiz 2 LLM<br>Analizi (ml<br>verisinde de<br>faydalanarak)"]
-    H{"Conf<br>Puanlaması"}
-    I["Çözüm Önerisi"]
-    J{"Kural Kontrolü"}
-    K["Açıklama ve<br>Kullanıcıya<br>Sunum"]
 
-    %% Akış Bağlantıları
-    A --> B --> C
-    
-    C --> D
-    C --> E
-    
-    D --> F
-    E --> F
-    
-    F -->|Daha fazla veri lazımsa<br>state güncelle ve dön| E
-    F --> G
-    
-    G --> H
-    
-    H -->|Düşük| C
-    H -->|Yüksek| I
-    
-    I --> J
-    
-    J -->|Uygun Değil| I
-    J -->|Uygun| K
-
-    %% Renklendirme ve Stiller (Görseldeki renklere uygun)
-    classDef blueBox fill:#cce5ff,stroke:#0066cc,stroke-width:2px,color:#000,rx:5px,ry:5px;
-    classDef pinkDiamond fill:#ff99cc,stroke:#cc0099,stroke-width:2px,color:#000;
-
-    class A,B,C,D,E,F,G,I,K blueBox;
-    class H,J pinkDiamond;
-
-
-
-## state
-
-
-```mermaid
-graph LR
-    %% Düğüm Tanımlamaları
-    A["Kullanıcı İstemi"]
-    B["Kullanıcı Niyeti<br>anlaşılması"]
-    C["Data Toplanması<br>(Tool seçimi)"]
-    D["Duruma uygun<br>strateji<br>kuralının<br>okunması"]
-    E["MCP<br>Dataların<br>toollar ile<br>çekilmesi"]
-    F["Analiz 1 MCP<br>ile ML Toolu"]
-    G["Analiz 2 LLM<br>Analizi (ml<br>verisinde de<br>faydalanarak)"]
-    H{"Conf<br>Puanlaması"}
-    I["Çözüm Önerisi"]
-    J{"Kural Kontrolü"}
-    K["Açıklama ve<br>Kullanıcıya<br>Sunum"]
-
-    %% Akış Bağlantıları
-    A --> B --> C
-    
-    C --> D
-    C --> E
-    
-    D --> F
-    E --> F
-    
-    F -->|Daha fazla veri lazımsa<br>state güncelle ve dön| E
-    F --> G
-    
-    G --> H
-    
-    H -->|Düşük| C
-    H -->|Yüksek| I
-    
-    I --> J
-    
-    J -->|Uygun Değil| I
-    J -->|Uygun| K
-
-    %% Renklendirme ve Stiller
-    classDef blueBox fill:#cce5ff,stroke:#0066cc,stroke-width:2px,color:#000,rx:5px,ry:5px;
-    classDef pinkDiamond fill:#ff99cc,stroke:#cc0099,stroke-width:2px,color:#000;
-
-    class A,B,C,D,E,F,G,I,K blueBox;
-    class H,J pinkDiamond;
-```
 
 
 # Final Target
+
+## workflow
+
+```mermaid
+graph TD
+    %% Stil ve Renk Tanımlamaları
+    classDef default font-family:sans-serif,font-size:14px;
+    classDef blueBox fill:#E1F0FF,stroke:#0052CC,stroke-width:2px,color:#172B4D,rx:8px,ry:8px;
+    classDef pinkDiamond fill:#FFEBE6,stroke:#FF5630,stroke-width:2px,color:#172B4D;
+    classDef finalBox fill:#E3FCEF,stroke:#00875A,stroke-width:2px,color:#172B4D,rx:8px,ry:8px;
+
+    %% Süreçleri Gruplama
+    subgraph Asama 1: Girdi
+        A["👤 Kullanıcı İstemi"]
+        B["🧠 Kullanıcı Niyeti<br>anlaşılması"]
+    end
+
+    subgraph Asama 2: Veri ve Hazırlık
+        C["🗄️ Data Toplanması<br>(Tool seçimi)"]
+        D["📜 Duruma uygun<br>strateji kuralının<br>okunması"]
+        E["🛠️ MCP Dataların<br>toollar ile çekilmesi"]
+    end
+
+    subgraph Asama 3: Yapay Zeka Analizi
+        F["🤖 Analiz 1 MCP<br>ile ML Toolu"]
+        G["⚡ Analiz 2 LLM<br>Analizi (ML verisinden<br>faydalanarak)"]
+    end
+
+    subgraph Asama 4: Karar ve Sonuç
+        H{"⚖️ Conf<br>Puanlaması"}
+        I["💡 Çözüm Önerisi"]
+        J{"🔍 Kural<br>Kontrolü"}
+        K["🎯 Açıklama ve<br>Kullanıcıya Sunum"]
+    end
+
+    %% Ana Akış Bağlantıları
+    A ==> B ==> C
+    
+    C ==> D
+    C ==> E
+    
+    D ==> F
+    E ==> F
+    F ==> G
+    G ==> H
+    
+    H ==>|Yüksek| I
+    I ==> J
+    J ==>|Uygun| K
+
+    %% Geri Dönüş / Döngü Bağlantıları
+    F -.->|Daha fazla veri lazımsa<br>state güncelle ve dön| E
+    H -.->|Düşük| C
+    J -.->|Uygun Değil| I
+
+    %% Sınıfların Düğümlere Atanması
+    class A,B,C,D,E,F,G,I blueBox;
+    class H,J pinkDiamond;
+    class K finalBox;
+```
+
+## State
+
+
+```mermaid
+flowchart TD
+    %% --- Stil ve Tema Tanımlamaları ---
+    classDef mainStep fill:#1A365D,stroke:#2B6CB0,stroke-width:3px,color:#FFFFFF,rx:8px,ry:8px,font-weight:bold;
+    classDef subCategory fill:#EBF8FF,stroke:#3182CE,stroke-width:2px,color:#2C5282,rx:5px,ry:5px;
+    classDef metricItem fill:#F0FFF4,stroke:#38A169,stroke-width:1px,color:#22543D,rx:20px,ry:20px;
+    classDef default font-family:sans-serif;
+
+    %% --- 1. GİRDİ ---
+    subgraph Adım 1: Girdi
+        A["📥 GİRDİ (Input)"]:::mainStep
+        A --> A1["👤 Kullanıcı Sorusu"]:::subCategory
+        A --> A2["⏳ Zaman Aralığı"]:::subCategory
+        A --> A3["🎭 Kullanıcı Rolü"]:::subCategory
+    end
+
+    %% --- 2. NİYET ANALİZİ ---
+    subgraph Adım 2: Niyet Analizi
+        B["🧠 NİYET ANALİZİ"]:::mainStep
+        B --> B1["🎯 Intent (Niyet)"]:::subCategory
+        B --> B2["📝 Açıklama"]:::subCategory
+    end
+
+    %% --- 3. VERİ KATMANI ---
+    subgraph Adım 3: Veri Katmanı
+        C["🗄️ VERİ KATMANI"]:::mainStep
+        
+        C --> C1["📌 Gerekli Metrikler"]:::subCategory
+        C --> C5["📜 Strateji Kuralları"]:::subCategory
+        
+        C --> C2["📈 Performans Metrikleri"]:::subCategory
+        C2 -.-> C21(["ROAS"]):::metricItem
+        C2 -.-> C22(["Dönüşüm Oranı"]):::metricItem
+        C2 -.-> C23(["Satış Adedi"]):::metricItem
+        C2 -.-> C24(["Ciro"]):::metricItem
+        C2 -.-> C25(["Reklam Harcaması"]):::metricItem
+
+        C --> C3["💰 Ürün Maliyet Bilgisi"]:::subCategory
+        C3 -.-> C31(["Birim Maliyet"]):::metricItem
+        C3 -.-> C32(["Satış Fiyatı"]):::metricItem
+        C3 -.-> C33(["Kar Marjı"]):::metricItem
+
+        C --> C4["📉 Trend Verileri"]:::subCategory
+        C4 -.-> C41(["Satış Trendi"]):::metricItem
+        C4 -.-> C42(["Reklam Trendi"]):::metricItem
+        C4 -.-> C43(["Dönüşüm Trendi"]):::metricItem
+    end
+
+    %% --- 4. ANALİZ ---
+    subgraph Adım 4: Analiz Sonuçları
+        D["📊 ANALİZ"]:::mainStep
+        D --> D1["📋 Durum Özeti"]:::subCategory
+        D --> D2["🔍 Tespit Edilen Desenler"]:::subCategory
+        D --> D3["⚠️ Risk Faktörleri"]:::subCategory
+    end
+
+    %% --- 5. ÖNERİLER ---
+    subgraph Adım 5: Strateji ve Öneriler
+        E["💡 ÖNERİLER"]:::mainStep
+        E --> E1["⭐ Ana Öneri"]:::subCategory
+        E --> E2["🔄 Alternatif Öneriler"]:::subCategory
+        E --> E3["🚀 Beklenen Etki"]:::subCategory
+    end
+
+    %% --- 6. AÇIKLAMA ---
+    subgraph Adım 6: Karar Açıklaması
+        F["💬 AÇIKLAMA"]:::mainStep
+        F --> F1["⚖️ Karar Gerekçesi"]:::subCategory
+        F --> F2["📂 Kullanılan Veriler"]:::subCategory
+        F --> F3["⚙️ Uygulanan Strateji Kuralları"]:::subCategory
+    end
+
+    %% --- ANA AKIŞ BAĞLANTILARI ---
+    A ==> B
+    B ==> C
+    C ==> D
+    D ==> E
+    E ==> F
+```
+
+
+
 
