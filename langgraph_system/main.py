@@ -36,9 +36,18 @@ async def run_system():
 
             # 4. Model Setup (Gemini)
             # Two models: one with tools for selection, one plain for reasoning
+            # with_retry: 429 gelirse bekleyip tekrar dener, graph.py'ye dokunmuyoruz
             model_name = "gemini-2.5-flash-lite"
-            model_with_tools = ChatGoogleGenerativeAI(model=model_name).bind_tools(tools)
-            model_plain = ChatGoogleGenerativeAI(model=model_name)
+            base_model = ChatGoogleGenerativeAI(model=model_name)
+            
+            model_with_tools = base_model.bind_tools(tools).with_retry(
+                stop_after_attempt=4,
+                wait_exponential_jitter=True  # 5s → 15s → 45s artan bekleme
+            )
+            model_plain = base_model.with_retry(
+                stop_after_attempt=4,
+                wait_exponential_jitter=True
+            )
             
             # 5. Graph Creation
             app = create_mcp_graph(model_with_tools, model_plain, tools)
@@ -118,4 +127,10 @@ if __name__ == "__main__":
     try:
         asyncio.run(run_system())
     except KeyboardInterrupt:
-        pass
+        print("\n👋 Çıkılıyor...")
+    except Exception as e:
+        if "RESOURCE_EXHAUSTED" in str(e):
+            print("\n⚠️ API kotası doldu. Birkaç dakika bekleyip tekrar deneyin.")
+            print("   (Günlük Free Tier limiti: 20 istek. Gece 00:00'da sıfırlanır.)")
+        else:
+            raise
