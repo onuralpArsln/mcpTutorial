@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "local-analytics": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["langgraph_system/mcp_server.py"]
+    },
+    "postgresql-example": {
+      "type": "stdio",
+      "command": "echo",
+      "args": ["Postgres placeholder"],
+      "disabled": true
+    }
+  }
+}

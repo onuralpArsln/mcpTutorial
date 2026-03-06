@@ -23,16 +23,26 @@ ollama run qwen2.5:3b
 
 
 
-# Kullanım
+# 🚀 Kullanım (Draft Final Target)
 
+Sistemi başlatmadan önce `.env` dosyasını oluşturduğunuzdan ve `mcp_config.json` dosyasında sunucularınızın tanımlı olduğundan emin olun.
 
-Ollama başlat (eğer lokalse)
-
-Sanal ortamdan başlat:
+**Sistemi Çalıştır:**
 
 ```bash
-python -m pipenv run python3 client.py
+python3 -m pipenv run python3 langgraph_system/main.py
 ```
+
+---
+
+# 📚 Proje Yapısı
+
+Bu repo iki aşamalı bir öğrenme süreci sunar:
+
+1.  **SimpleMCPClient (Başlangıç):** Gemini ile doğrudan iletişim kuran basit bir istemci. (`client.py`)
+2.  **LangGraph System (Final Target):** Çoklu LLM desteği, Çoklu MCP sunucu desteği ve Niyet Analizi (Intent Registry) içeren gelişmiş ajan sistemi.
+
+---
 
 # SimpleMCPClient
 
@@ -272,12 +282,41 @@ reporting:
 
 ---
 
+# 🔌 Çoklu Sunucu (Multi-Server) Yönetimi
+
+Sistem artık aynı anda birden fazla MCP sunucusuna bağlanabilir. Tüm ayarlar projenin kök dizinindeki `mcp_config.json` dosyasından yönetilir.
+
+### Yeni Sunucu Ekleme
+
+`mcp_config.json` dosyasını açın ve `mcpServers` altına yeni bir giriş ekleyin:
+
+```json
+{
+  "mcpServers": {
+    "yerel-analiz": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["langgraph_system/mcp_server.py"]
+    },
+    "uzak-veritabani": {
+      "type": "stdio",
+      "command": "/usr/bin/mcp-server-postgres",
+      "args": ["postgresql://user:pass@host:port/db"]
+    }
+  }
+}
+```
+
+### Sunucuyu Kapatma (Geçici)
+Bir sunucuyu silmeden devre dışı bırakmak için `"disabled": true` eklemeniz yeterlidir.
+
+---
+
 ## 💡 Özet: Hangi Dosya Ne İşe Yarar?
 
 | Dosya | Görevi | Ne Zaman Düzenlenir? |
 |---|---|---|
-| `mcp_server.py` | **Eller** (İşi yapar) | Yeni bir fonksiyon/araç eklemek istiyorsan. |
-| `intents.yaml` | **Harita** (Yol gösterir) | Araçları gruplamak veya yeni niyetler eklemek istiyorsan. |
+| `mcp_config.json` | **Bağlantılar** | Yeni bir MCP sunucusu (DB, Search vb.) eklemek istiyorsan. |
+| `mcp_server.py` | **Eller** (İşi yapar) | Senin yazdığın yerel fonksiyonları/araçları düzenlemek istiyorsan. |
+| `intents.yaml` | **Harita** (Yol gösterir) | Araçları niyetlere (intent) bağlamak veya gruplamak istiyorsan. |
 | `.env` | **Ayar** (LLM seçer) | Gemini veya Ollama arasında geçiş yapmak istiyorsan. |
-| `main.py` | **Motor** (Sistemi kurar) | *Genellikle dokunmanıza gerek yok.* |
-| `graph.py` | **Zihin** (Karar verir) | *Genellikle dokunmanıza gerek yok.* |
