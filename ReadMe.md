@@ -219,8 +219,65 @@ flowchart TD
     C ==> D
     D ==> E
     E ==> F
+
+
+---
+
+---
+
+# 🚀 Yeni Bir Özellik Nasıl Eklenir? (Basit Rehber)
+
+Kod bilmenize gerek yok! Sistemi genişletmek için sadece **iki adım** yeterli:
+
+### 1. Adım: Yeni Yeteneği Tanımla (Python)
+`langgraph_system/mcp_server.py` dosyasına git ve yeni fonksiyonunu ekle:
+
+```python
+@mcp.tool()
+def stok_durumu() -> str:
+    """Depodaki ürünlerin sayısını söyler."""
+    return "iPhone 15: 10 adet, Samsung S24: 5 adet"
 ```
 
+### 2. Adım: Yeteneği Yapay Zekaya Bağla (YAML)
+`langgraph_system/intents.yaml` dosyasına git ve yeni fonksiyonunu bir **Niyete (Intent)** bağla:
 
+```yaml
+# Örnek: 'info_only' niyetine yeni tool'u bağladık
+info_only:
+  description: "Ürün ve stok bilgilerini verir"
+  tools:
+    - list_products
+    - stok_durumu  # ← Buraya eklediğin an yapay zeka bunu kullanmaya başlar!
+```
 
+---
 
+## 🎨 Sisteme Yeni Bir "Niyet" (Grup) Eklemek
+Diyelim ki sisteme **"Raporlama"** adında tamamen yeni bir kategori eklemek istiyorsunuz:
+
+`intents.yaml` içine şu bloğu yapıştırın:
+
+```yaml
+reporting:
+  description: "Satış raporları oluşturur ve özetler"
+  examples:
+    - "bugünkü satış raporunu çıkar"
+    - "bu ay ne kadar sattık"
+  tools:
+    - get_sales_data  # (Bu isimde bir tool'u mcp_server.py'ye eklemiş olmalısın)
+```
+
+**Sonuç:** Yapay zeka artık "bugünkü satış raporunu çıkar" dendiğinde otomatik olarak `reporting` kategorisine gidecek ve sadece oradaki araçları kullanacaktır!
+
+---
+
+## 💡 Özet: Hangi Dosya Ne İşe Yarar?
+
+| Dosya | Görevi | Ne Zaman Düzenlenir? |
+|---|---|---|
+| `mcp_server.py` | **Eller** (İşi yapar) | Yeni bir fonksiyon/araç eklemek istiyorsan. |
+| `intents.yaml` | **Harita** (Yol gösterir) | Araçları gruplamak veya yeni niyetler eklemek istiyorsan. |
+| `.env` | **Ayar** (LLM seçer) | Gemini veya Ollama arasında geçiş yapmak istiyorsan. |
+| `main.py` | **Motor** (Sistemi kurar) | *Genellikle dokunmanıza gerek yok.* |
+| `graph.py` | **Zihin** (Karar verir) | *Genellikle dokunmanıza gerek yok.* |

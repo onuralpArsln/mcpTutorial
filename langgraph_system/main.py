@@ -8,6 +8,7 @@ from langchain_core.messages import HumanMessage
 from mcp_adapter import create_langchain_tools
 from graph import create_mcp_graph
 from llm_factory import get_llm
+from intent_registry import IntentRegistry
 
 load_dotenv()
 
@@ -35,21 +36,22 @@ async def run_system():
             print(f"Loaded {len(tools)} tools dynamically: {[t.name for t in tools]}")
 
             # 4. Model Setup
-            # Two models: one with tools for selection, one plain for reasoning
-            # with_retry: 429 gelirse bekleyip tekrar dener, graph.py'ye dokunmuyoruz
+            # We pass the base_model and apply retries/binding inside the graph
+            # to avoid AttributeError with with_structured_output.
             base_model = get_llm()
             
-            model_with_tools = base_model.bind_tools(tools).with_retry(
-                stop_after_attempt=4,
-                wait_exponential_jitter=True  # 5s → 15s → 45s artan bekleme
-            )
+            # Plain model for reasoning (no tools)
             model_plain = base_model.with_retry(
                 stop_after_attempt=4,
                 wait_exponential_jitter=True
             )
-            
-            # 5. Graph Creation
-            app = create_mcp_graph(model_with_tools, model_plain, tools)
+
+            # 5. Load Intent Registry from YAML config
+            registry = IntentRegistry()
+            print(f"Loaded {len(registry.get_intent_names())} intents: {registry.get_intent_names()}")
+
+            # 6. Graph Creation (registry now drives intent routing + tool filtering)
+            app = create_mcp_graph(base_model, model_plain, tools, registry)
 
             # 6. Execution Loop
             print("\nFinal Target LangGraph + Mock MCP Ready. (Type 'exit' to quit)")

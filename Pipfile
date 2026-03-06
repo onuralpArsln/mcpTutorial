@@ -11,6 +11,7 @@ python-dotenv = "*"
 langgraph = "*"
 langchain-google-genai = "*"
 langchain-ollama = "*"
+pyyaml = "*"
 
 [dev-packages]
 
