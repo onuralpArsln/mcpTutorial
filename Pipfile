@@ -10,6 +10,7 @@ pydantic = "*"
 python-dotenv = "*"
 langgraph = "*"
 langchain-google-genai = "*"
+langchain-ollama = "*"
 
 [dev-packages]
 

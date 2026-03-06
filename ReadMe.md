@@ -3,10 +3,30 @@
 Pipenv sanal ortama yükle:
 
 ```bash
+pip install pipenv
 python -m pipenv install mcp google-genai pydantic python-dotenv
 python -m pipenv install langgraph langchain-google-genai
+python -m pipenv install langchain-ollama
 
 ```
+
+## GEt Ollama 
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+```bash
+ollama run llama3.1
+ollama run qwen2.5:3b
+```
+
+
+
+# Kullanım
+
+
+Ollama başlat (eğer lokalse)
 
 Sanal ortamdan başlat:
 

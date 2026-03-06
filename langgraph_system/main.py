@@ -3,11 +3,11 @@ import os
 from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage
 
 from mcp_adapter import create_langchain_tools
 from graph import create_mcp_graph
+from llm_factory import get_llm
 
 load_dotenv()
 
@@ -34,11 +34,10 @@ async def run_system():
             tools = await create_langchain_tools(session)
             print(f"Loaded {len(tools)} tools dynamically: {[t.name for t in tools]}")
 
-            # 4. Model Setup (Gemini)
+            # 4. Model Setup
             # Two models: one with tools for selection, one plain for reasoning
             # with_retry: 429 gelirse bekleyip tekrar dener, graph.py'ye dokunmuyoruz
-            model_name = "gemini-2.5-flash-lite"
-            base_model = ChatGoogleGenerativeAI(model=model_name)
+            base_model = get_llm()
             
             model_with_tools = base_model.bind_tools(tools).with_retry(
                 stop_after_attempt=4,
