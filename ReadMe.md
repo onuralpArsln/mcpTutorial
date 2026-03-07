@@ -142,83 +142,32 @@ graph TD
 
 
 ```mermaid
-flowchart TD
+flowchart LR
     %% --- Stil ve Tema Tanımlamaları ---
     classDef mainStep fill:#1A365D,stroke:#2B6CB0,stroke-width:3px,color:#FFFFFF,rx:8px,ry:8px,font-weight:bold;
     classDef subCategory fill:#EBF8FF,stroke:#3182CE,stroke-width:2px,color:#2C5282,rx:5px,ry:5px;
     classDef metricItem fill:#F0FFF4,stroke:#38A169,stroke-width:1px,color:#22543D,rx:20px,ry:20px;
-    classDef default font-family:sans-serif;
 
-    %% --- 1. GİRDİ ---
-    subgraph Adım 1: Girdi
-        A["📥 GİRDİ (Input)"]:::mainStep
-        A --> A1["👤 Kullanıcı Sorusu"]:::subCategory
-        A --> A2["⏳ Zaman Aralığı"]:::subCategory
-        A --> A3["🎭 Kullanıcı Rolü"]:::subCategory
-    end
+    %% --- KATMANLAR ---
+    A["📥 GİRDİ<br>(İstem, Zaman, Rol)"]:::mainStep
+    B["🧠 NİYET<br>(Intent Seçimi)"]:::mainStep
+    C["🗄️ VERİ KATMANI"]:::mainStep
+    D["📊 ANALİZ<br>(Özet ve Risk)"]:::mainStep
+    E["💡 ÖNERİLER<br>(Strateji)"]:::mainStep
+    F["💬 AÇIKLAMA"]:::mainStep
 
-    %% --- 2. NİYET ANALİZİ ---
-    subgraph Adım 2: Niyet Analizi
-        B["🧠 NİYET ANALİZİ"]:::mainStep
-        B --> B1["🎯 Intent (Niyet)"]:::subCategory
-        B --> B2["📝 Açıklama"]:::subCategory
-    end
+    %% --- GİZLİ BAĞLANTILAR (KUTULARI DÜZENLİ TUTMAK İÇİN) ---
+    A ==> B ==> C ==> D ==> E ==> F
 
-    %% --- 3. VERİ KATMANI ---
-    subgraph Adım 3: Veri Katmanı
-        C["🗄️ VERİ KATMANI"]:::mainStep
-        
-        C --> C1["📌 Gerekli Metrikler"]:::subCategory
-        C --> C5["📜 Strateji Kuralları"]:::subCategory
-        
-        C --> C2["📈 Performans Metrikleri"]:::subCategory
-        C2 -.-> C21(["ROAS"]):::metricItem
-        C2 -.-> C22(["Dönüşüm Oranı"]):::metricItem
-        C2 -.-> C23(["Satış Adedi"]):::metricItem
-        C2 -.-> C24(["Ciro"]):::metricItem
-        C2 -.-> C25(["Reklam Harcaması"]):::metricItem
+    %% --- VERİ KATMANI DETAYLARI (Alt Alta) ---
+    C --> C1["📜 Kurallar"]:::subCategory
+    C --> C2["📈 Performans (ROAS, Ciro, TBM)"]:::subCategory
+    C --> C3["💰 Maliyet (Kar Marjı)"]:::subCategory
+    C --> C4["📉 Trendler"]:::subCategory
 
-        C --> C3["💰 Ürün Maliyet Bilgisi"]:::subCategory
-        C3 -.-> C31(["Birim Maliyet"]):::metricItem
-        C3 -.-> C32(["Satış Fiyatı"]):::metricItem
-        C3 -.-> C33(["Kar Marjı"]):::metricItem
-
-        C --> C4["📉 Trend Verileri"]:::subCategory
-        C4 -.-> C41(["Satış Trendi"]):::metricItem
-        C4 -.-> C42(["Reklam Trendi"]):::metricItem
-        C4 -.-> C43(["Dönüşüm Trendi"]):::metricItem
-    end
-
-    %% --- 4. ANALİZ ---
-    subgraph Adım 4: Analiz Sonuçları
-        D["📊 ANALİZ"]:::mainStep
-        D --> D1["📋 Durum Özeti"]:::subCategory
-        D --> D2["🔍 Tespit Edilen Desenler"]:::subCategory
-        D --> D3["⚠️ Risk Faktörleri"]:::subCategory
-    end
-
-    %% --- 5. ÖNERİLER ---
-    subgraph Adım 5: Strateji ve Öneriler
-        E["💡 ÖNERİLER"]:::mainStep
-        E --> E1["⭐ Ana Öneri"]:::subCategory
-        E --> E2["🔄 Alternatif Öneriler"]:::subCategory
-        E --> E3["🚀 Beklenen Etki"]:::subCategory
-    end
-
-    %% --- 6. AÇIKLAMA ---
-    subgraph Adım 6: Karar Açıklaması
-        F["💬 AÇIKLAMA"]:::mainStep
-        F --> F1["⚖️ Karar Gerekçesi"]:::subCategory
-        F --> F2["📂 Kullanılan Veriler"]:::subCategory
-        F --> F3["⚙️ Uygulanan Strateji Kuralları"]:::subCategory
-    end
-
-    %% --- ANA AKIŞ BAĞLANTILARI ---
-    A ==> B
-    B ==> C
-    C ==> D
-    D ==> E
-    E ==> F
+    %% --- AÇIKLAMA DETAYLARI ---
+    F -.-> F1["Karar Gerekçesi"]:::subCategory
+    F -.-> F2["Kullanılan Veri"]:::subCategory
 ```
 
 ---
