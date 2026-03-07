@@ -69,24 +69,14 @@ MCP sunucusu burada çalışır. Yeni toollar buraya eklenir.
 
 Bu sistem, yapay zekanın yerel araçlarla nasıl etkileşime girdiğini üç katmanda yönetir:
 
-1.  **Beyin (LangGraph):** İş akışını ve "karar verme" sürecini yönetir. Kullanıcının ne istediğini anlar ve hangi aracın ne zaman kullanılacağına karar verir.
-2.  **Kablo (MCP Adapter):** MCP sunucusundan gelen ham araçları, LangGraph'ın (Gemini/Claude) anlayabileceği "LangChain Tool" formatına otomatik olarak dönüştürür.
-3.  **Eller (MCP Server):** Gerçek işi yapan kısımdır. Dosya yazma, okuma veya RAG (Bilgi tabanı) araması gibi işlemleri gerçekleştirir.
+1.  **LangGraph:** İş akışını ve "karar verme" sürecini yönetir. Kullanıcının ne istediğini anlar ve hangi aracın ne zaman kullanılacağına karar verir.
+2.  **MCP Adapter:** MCP sunucusundan gelen ham araçları, LangGraph'ın (Gemini/Claude) anlayabileceği "LangChain Tool" formatına otomatik olarak dönüştürür.
+3.  **MCP Server:** Gerçek işi yapan kısımdır. Dosya yazma, okuma veya RAG (Bilgi tabanı) araması gibi işlemleri gerçekleştirir.
 
-#### Kritik Adım: Tool Seçimi
-Niyet anlaşıldıktan sonra, LLM hangi araçların (Performance, Rules, Pattern vb.) kullanılacağına karar verir. Bu adım, "Eller"e hangi işi yapacağını söyleyen "Sinir Sistemi" gibidir.
+####  Tool Seçimi
+Niyet anlaşıldıktan sonra, LLM hangi araçların (Performance, Rules, Pattern vb.) kullanılacağına karar verir.
 
-```mermaid
-graph LR
-    A[Kullanıcı İstemi] --> B[LangGraph Brain]
-    B <--> C{MCP Adapter}
-    C <--> D[MCP Server]
-    D --- E[Dosya İşlemleri]
-    D --- F[RAG Araması]
-    D --- G[Sistem Bilgisi]
-```
 
-# Final Target
 
 ## workflow
 
@@ -229,15 +219,15 @@ flowchart TD
     C ==> D
     D ==> E
     E ==> F
-
-
----
+```
 
 ---
 
-# 🚀 Yeni Bir Özellik Nasıl Eklenir? (Basit Rehber)
+---
 
-Kod bilmenize gerek yok! Sistemi genişletmek için sadece **iki adım** yeterli:
+# 🚀 Yeni Bir Özellik Nasıl Eklenir? 
+
+
 
 ### 1. Adım: Yeni Yeteneği Tanımla (Python)
 `langgraph_system/mcp_server.py` dosyasına git ve yeni fonksiyonunu ekle:
@@ -264,7 +254,7 @@ info_only:
 ---
 
 ## 🎨 Sisteme Yeni Bir "Niyet" (Grup) Eklemek
-Diyelim ki sisteme **"Raporlama"** adında tamamen yeni bir kategori eklemek istiyorsunuz:
+Örnek: sisteme **"Raporlama"** adında tamamen yeni bir kategori eklemek:
 
 `intents.yaml` içine şu bloğu yapıştırın:
 

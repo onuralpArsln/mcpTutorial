@@ -9,12 +9,70 @@ mcp = FastMCP("LangGraph-Experimental-Server")
 
 # --- Mock Product Database ---
 PRODUCTS_DB = {
-    "P001": {"name": "Eco-Friendly Water Bottle", "category": "Home", "cost": 15, "price": 45},
-    "P002": {"name": "Wireless Headphones", "category": "Electronics", "cost": 120, "price": 299},
-    "P003": {"name": "Ergonomic Chair", "category": "Office", "cost": 85, "price": 249},
-    "P004": {"name": "Solar Charger", "category": "Outdoor", "cost": 35, "price": 89},
-    "P005": {"name": "Fitness Tracker", "category": "Health", "cost": 55, "price": 129}
+    "XPUFFY4040KAREPUF": {"name": "Puffy Kare Puf 40x40", "category": "Mobilya", "cost": 150, "price": 450},
+    "XPUFFY6060KAREPUF": {"name": "Puffy Kare Puf 60x60", "category": "Mobilya", "cost": 220, "price": 600},
+    "ZAYNABED120X200": {"name": "Zayna Yatak 120x200", "category": "Yatak", "cost": 1200, "price": 3500},
+    "ZAYNABED160X200": {"name": "Zayna Çift Kişilik Yatak 160x200", "category": "Yatak", "cost": 1500, "price": 4200},
+    "MINIPUFROUND": {"name": "Mini Yuvarlak Puf", "category": "Mobilya", "cost": 85, "price": 250}
 }
+
+# --- Mock Ad Performance Database ---
+MOCK_AD_PERFORMANCE_DB = [
+    {
+        "id": 1,
+        "sorgu_tarihi": "2026-02-27",
+        "sorgu_saati": "15:40:02.575786",
+        "urun_kodu": "XPUFFY4040KAREPUF",
+        "harcanan_butce": 372.54,
+        "gosterim_sayisi": 10781,
+        "tiklanma_sayisi": 193,
+        "reklam_cirosu": 0.00,
+        "harcama_getirisi": 0.00,
+        "gerceklesen_tbm": 1.93,
+        "tbm_teklif": 1.79,
+        "onerilen_tbm": "Önerilen TBM: 3,28 ₺ (En iyi 5,26 ₺)",
+        "satis_adet": 0,
+        "net_satis": 0.00,
+        "created_at": "2026-02-27 12:40:24.287168",
+        "gunluk_butce": 500
+    },
+    {
+        "id": 2,
+        "sorgu_tarihi": "2026-02-27",
+        "sorgu_saati": "15:40:02.575786",
+        "urun_kodu": "ZAYNABED160X200",
+        "harcanan_butce": 450.00,
+        "gosterim_sayisi": 25000,
+        "tiklanma_sayisi": 450,
+        "reklam_cirosu": 12600.00,
+        "harcama_getirisi": 28.00,
+        "gerceklesen_tbm": 1.00,
+        "tbm_teklif": 1.20,
+        "onerilen_tbm": "Önerilen TBM: 1,50 ₺ (En iyi 2,00 ₺)",
+        "satis_adet": 3,
+        "net_satis": 12600.00,
+        "created_at": "2026-02-20 09:00:00.000000",
+        "gunluk_butce": 1000
+    },
+    {
+        "id": 3,
+        "sorgu_tarihi": "2026-02-27",
+        "sorgu_saati": "15:40:02.575786",
+        "urun_kodu": "MINIPUFROUND",
+        "harcanan_butce": 120.50,
+        "gosterim_sayisi": 5430,
+        "tiklanma_sayisi": 85,
+        "reklam_cirosu": 500.00,
+        "harcama_getirisi": 4.15,
+        "gerceklesen_tbm": 1.41,
+        "tbm_teklif": 1.50,
+        "onerilen_tbm": "Önerilen TBM: 2,10 ₺ (En iyi 3,50 ₺)",
+        "satis_adet": 2,
+        "net_satis": 500.00,
+        "created_at": "2026-02-25 14:30:00.000000",
+        "gunluk_butce": 200
+    }
+]
 
 # --- Core Tools (copied from original for baseline) ---
 
@@ -46,41 +104,48 @@ def notlari_listele() -> str:
 # --- Experimental Tools (New!) ---
 
 @mcp.tool()
-def get_performance_metrics(range_type: str = "last_7_days") -> str:
-    """Returns mock performance metrics (ROAS, Conversion Rate, CPC, etc.) for a given range."""
-    # Mock data based on the ReadMe state diagram
-    metrics = {
-        "ROAS": 3.2,
-        "Conversion_Rate": "2.4%",
-        "Sales_Count": 150,
-        "Revenue": 15000,
-        "Ad_Spend": 4687.5,
-        "CTR": "1.8%",
-        "Range": range_type
-    }
-    return f"Performance Data: {metrics}"
+def get_performance_metrics(urun_kodu: str = "") -> str:
+    """Returns mock performance metrics (ROAS, TBG, vs) against actual database structures."""
+    results = MOCK_AD_PERFORMANCE_DB
+    
+    if urun_kodu:
+        results = [row for row in results if row["urun_kodu"] == urun_kodu.upper()]
+        
+    if not results:
+        return f"Belirtilen ürün kodu ({urun_kodu}) için veri bulunamadı."
+        
+    # Format the data for the LLM
+    formatted = "Performans Verileri:\n"
+    for r in results:
+        formatted += (
+            f"- Urun: {r['urun_kodu']} | Tarih: {r['sorgu_tarihi']}\n"
+            f"  Harcama: {r['harcanan_butce']} TL | Ciro: {r['reklam_cirosu']} TL | ROAS: {r['harcama_getirisi']}\n"
+            f"  TBM Gerçekleşen: {r['gerceklesen_tbm']} | Teklif Edilen: {r['tbm_teklif']} | {r['onerilen_tbm']}\n"
+            f"  Gösterim: {r['gosterim_sayisi']} | Tıklama: {r['tiklanma_sayisi']} | Satış: {r['satis_adet']}\n\n"
+        )
+    return formatted
 
 @mcp.tool()
 def list_products() -> str:
     """Lists all products available in the mock database."""
-    return "Available Products:\n" + "\n".join([f"[{id}] {p['name']} ({p['category']})" for id, p in PRODUCTS_DB.items()])
+    return "Mevcut Ürünler:\n" + "\n".join([f"[{id}] {p['name']} ({p['category']})" for id, p in PRODUCTS_DB.items()])
 
 @mcp.tool()
-def get_product_costs(product_id: str = "P001") -> str:
-    """Returns mock cost information for a specific product ID."""
-    p = PRODUCTS_DB.get(product_id.upper())
+def get_product_costs(urun_kodu: str) -> str:
+    """Returns mock cost information for a specific product ID (urun_kodu)."""
+    p = PRODUCTS_DB.get(urun_kodu.upper())
     if not p:
-        return f"Error: Product ID {product_id} not found."
+        return f"Error: Ürün Kodu {urun_kodu} bulunamadı."
     
     margin = ((p['price'] - p['cost']) / p['price']) * 100
     costs = {
-        "Product_Name": p['name'],
-        "Unit_Cost": p['cost'],
-        "Sale_Price": p['price'],
-        "Profit_Margin": f"{margin:.1f}%",
-        "Product_ID": product_id
+        "Urun_Adi": p['name'],
+        "Maliyet": p['cost'],
+        "Satis_Fiyati": p['price'],
+        "Kar_Marji": f"{margin:.1f}%",
+        "Urun_Kodu": urun_kodu
     }
-    return f"Cost Data: {costs}"
+    return f"Maliyet Verisi: {costs}"
 
 @mcp.tool()
 def get_strategy_rules(intent_type: str) -> str:
@@ -111,10 +176,12 @@ def get_strategy_rules(intent_type: str) -> str:
 @mcp.tool()
 def run_pattern_recognition(data_summary: str) -> str:
     """Simulates an ML tool that identifies patterns/trends in performance data."""
-    # Mock pattern detection logic
-    if "3.2" in data_summary:
-        return "Pattern Detected: Positive trend in ROAS identified. Consistent performance over the weekend. No anomalies found."
-    return "Pattern Detected: Fluctuating performance. Recommendation: Collect more data before scaling."
+    # Mock pattern detection logic using the new terms
+    if "ROAS: 0.0" in data_summary or "harcama_getirisi: 0" in data_summary.lower():
+        return "Pattern Detected: Kritik Durum. Harcama yapılıyor ancak hiç ciro (ROAS 0) gelmemiş. Reklamın acilen durdurulması veya hedeflerin gözden geçirilmesi önerilir."
+    elif "ROAS: 28.0" in data_summary or "harcama_getirisi" in data_summary and "28" in data_summary:
+         return "Pattern Detected: Mükemmel Performans. ROAS çok yüksek, TBM düşük. SCALE UP (Bütçe Artırımı) stratejisi uygulanmalıdır."
+    return "Pattern Detected: Dalgalı performans. Daha fazla veri toplanması önerilir."
 
 @mcp.tool()
 def system_info() -> str:

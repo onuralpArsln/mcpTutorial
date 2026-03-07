@@ -20,9 +20,9 @@ intents:
     description: "Performansı göster, rapor ver, KPI sorgula, satış/reklam analizi yap"
     examples:
       - "roas nedir"
-      - "performans raporunu göster"
+      - "ZAYNABED160X200 performans raporunu göster"
       - "geçen hafta satışlar nasıldı"
-      - "kampanya metrikleri nelerdir"
+      - "XPUFFY4040KAREPUF kampanya metrikleri nelerdir"
     tools:
       - get_performance_metrics      # source: mcp_server.py (analytics)
       - get_strategy_rules           # source: mcp_server.py (analytics)
@@ -34,7 +34,7 @@ intents:
     examples:
       - "hangi ürünler var"
       - "ürün listesini göster"
-      - "P001 maliyeti nedir"
+      - "XPUFFY6060KAREPUF maliyeti nedir"
       - "sistem bilgisi ver"
     tools:
       - list_products                # source: mcp_server.py
