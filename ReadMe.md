@@ -149,7 +149,7 @@ flowchart LR
     classDef metricItem fill:#F0FFF4,stroke:#38A169,stroke-width:1px,color:#22543D,rx:20px,ry:20px;
 
     %% --- KATMANLAR ---
-    A["📥 GİRDİ<br>(İstem, Zaman, Rol)"]:::mainStep
+    A["📥 GİRDİ<br>(İstem)"]:::mainStep
     B["🧠 NİYET<br>(Intent Seçimi)"]:::mainStep
     C["🗄️ VERİ KATMANI"]:::mainStep
     D["📊 ANALİZ<br>(Özet ve Risk)"]:::mainStep
