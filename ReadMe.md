@@ -146,28 +146,28 @@ flowchart LR
     %% --- Stil ve Tema Tanımlamaları ---
     classDef mainStep fill:#1A365D,stroke:#2B6CB0,stroke-width:3px,color:#FFFFFF,rx:8px,ry:8px,font-weight:bold;
     classDef subCategory fill:#EBF8FF,stroke:#3182CE,stroke-width:2px,color:#2C5282,rx:5px,ry:5px;
-    classDef metricItem fill:#F0FFF4,stroke:#38A169,stroke-width:1px,color:#22543D,rx:20px,ry:20px;
+    classDef secretStep fill:#4A5568,stroke:#2D3748,stroke-width:2px,color:#E2E8F0,rx:8px,ry:8px,stroke-dasharray: 5 5;
 
     %% --- KATMANLAR ---
     A["📥 GİRDİ<br>(İstem)"]:::mainStep
     B["🧠 NİYET<br>(Intent Seçimi)"]:::mainStep
-    C["🗄️ VERİ KATMANI"]:::mainStep
-    D["📊 ANALİZ<br>(Özet ve Risk)"]:::mainStep
-    E["💡 ÖNERİLER<br>(Strateji)"]:::mainStep
-    F["💬 AÇIKLAMA"]:::mainStep
+    C["🗄️ VERİ KATMANI<br>(Tool Çalıştırma)"]:::mainStep
+    
+    %% Dual Track
+    D["🕵️ GİZLİ ANALİST<br>(ROAS/Kural Kontrolü)"]:::secretStep
+    E["💬 AÇIKLAYICI<br>(Kullanıcı Yanıtı)"]:::mainStep
 
-    %% --- GİZLİ BAĞLANTILAR (KUTULARI DÜZENLİ TUTMAK İÇİN) ---
-    A ==> B ==> C ==> D ==> E ==> F
+    %% --- BAĞLANTILAR (AKIŞ) ---
+    A ==> B ==> C
+    
+    C ==>|Analiz / Optimizasyon| D
+    C ==>|Sadece Bilgi / Sohbet| E
+    
+    D ==>|Analiz Notu &\nGüvenlik Koruması| E
 
-    %% --- VERİ KATMANI DETAYLARI (Alt Alta) ---
-    C --> C1["📜 Kurallar"]:::subCategory
-    C --> C2["📈 Performans (ROAS, Ciro, TBM)"]:::subCategory
-    C --> C3["💰 Maliyet (Kar Marjı)"]:::subCategory
-    C --> C4["📉 Trendler"]:::subCategory
-
-    %% --- AÇIKLAMA DETAYLARI ---
-    F -.-> F1["Karar Gerekçesi"]:::subCategory
-    F -.-> F2["Kullanılan Veri"]:::subCategory
+    %% --- DETAYLAR ---
+    C -.-> C1["raw_data\n(Ham Araç Çıktısı)"]:::subCategory
+    D -.-> D1["analysis_result &\nviolates_rules"]:::subCategory
 ```
 
 ---
