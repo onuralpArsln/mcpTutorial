@@ -11,8 +11,6 @@ langgraph = "*"
 langchain-google-genai = "*"
 langchain-ollama = "*"
 pyyaml = "*"
-streamlit = "*"
-pydantic = "==2.8.2"
 
 [dev-packages]
 
