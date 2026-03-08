@@ -52,18 +52,18 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
 
         prompt = f"""Kullanıcının niyetini tespit et. SADECE aşağıdaki seçeneklerden birini seç:
 
-{descriptions}
+        {descriptions}
 
-Örnekler:
-{examples}
+        Örnekler:
+        {examples}
 
-Yukarıdaki kategorilerden dışına ÇIKMA. Sadece seçeneklerden birini seç."""
+        Yukarıdaki kategorilerden dışına ÇIKMA. Sadece seçeneklerden birini seç."""
 
         response = await intent_model.ainvoke(
             [HumanMessage(content=prompt)] + state["messages"]
         )
         intent = response.intent.strip().lower()
-        print(f"   🔍 Niyet Analiz Edildi: {intent}")
+        print(f"Niyet Analiz Edildi: {intent}")
         
         # Initialize the fresh state fields
         return {
@@ -118,7 +118,7 @@ Yukarıdaki kategorilerden dışına ÇIKMA. Sadece seçeneklerden birini seç."
         violates_rules: bool
 
     async def analyst_node(state: AgentState):
-        print("   🧠 Analist Devrede: Derin veri inceleniyor...")
+        print("Analist Devrede: Derin veri inceleniyor...")
         analyst_llm = model_plain.with_structured_output(AnalystOutput).with_retry(
              stop_after_attempt=3, wait_exponential_jitter=True
         )
@@ -201,8 +201,8 @@ Yukarıdaki kategorilerden dışına ÇIKMA. Sadece seçeneklerden birini seç."
     workflow.add_node("evaluator", evaluator_node)
 
     # Define flow
-    workflow.set_entry_point("intent")
-    workflow.add_edge("intent", "tool_selection")
+    workflow.set_entry_point("intent") #bşlangıç
+    workflow.add_edge("intent", "tool_selection") # hep sabit sıra 
     
     # Conditional route 1: Do we have tools to run?
     workflow.add_conditional_edges("tool_selection", route_after_intent, {
