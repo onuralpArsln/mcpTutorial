@@ -10,7 +10,7 @@ python -m pipenv install langchain-ollama
 
 ```
 
-## GEt Ollama 
+## Get Ollama 
 
 ```bash
 curl -fsSL https://ollama.com/install.sh | sh
@@ -31,6 +31,10 @@ Sistemi başlatmadan önce `.env` dosyasını oluşturduğunuzdan ve `mcp_config
 
 ```bash
 python3 -m pipenv run python3 langgraph_system/main.py
+```
+
+```bash
+pipenv run python -m streamlit run langgraph_system/streamlit_app.py
 ```
 
 ---

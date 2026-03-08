@@ -6,12 +6,13 @@ name = "pypi"
 [packages]
 mcp = "*"
 google-genai = "*"
-pydantic = "*"
 python-dotenv = "*"
 langgraph = "*"
 langchain-google-genai = "*"
 langchain-ollama = "*"
 pyyaml = "*"
+streamlit = "*"
+pydantic = "==2.8.2"
 
 [dev-packages]
 

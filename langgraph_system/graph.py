@@ -119,7 +119,9 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
 
     async def analyst_node(state: AgentState):
         print("Analist Devrede: Derin veri inceleniyor...")
-        analyst_llm = model_plain.with_structured_output(AnalystOutput).with_retry(
+        # If model_plain is wrapped in RunnableRetry, we need its base to use structured output
+        base_llm = getattr(model_plain, "bound", model_plain)
+        analyst_llm = base_llm.with_structured_output(AnalystOutput).with_retry(
              stop_after_attempt=3, wait_exponential_jitter=True
         )
         
