@@ -85,21 +85,24 @@ if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
                                         snippet = str(msg.content)[:150].replace('\n', ' ')
                                         st.write(f"✅ Veri Çekildi: _{snippet}..._")
                         elif node in ("explainer", "analyst"):
-                             # In case there's an intermediate output we might want to capture
-                             pass
+                             if node == "explainer" and "messages" in data:
+                                 m = data["messages"][-1]
+                                 content = m.content
+                                 if isinstance(content, list):
+                                     text_parts = [part.get("text", "") for part in content if isinstance(part, dict) and part.get("type") == "text"]
+                                     final_response = "".join(text_parts).strip()
+                                 else:
+                                     final_response = str(content).strip()
                         elif node == "evaluator":
                              if "confidence_score" in data:
                                  score = data['confidence_score']
                                  s = "✅ GÜVENLİ" if score >= 70 else "⚠️ DÜŞÜK GÜVEN"
                                  st.write(f"⚖️ Güven Puanı: {score}/100 -> {s}")
                                  
-                # After the loop finishes, extract the final AIMessage from the graph state
-                final_state = await app.aget_state({"messages": [user_msg]})
-                if final_state and getattr(final_state, 'values', None) and "messages" in final_state.values:
-                     messages = final_state.values["messages"]
-                     if messages:
-                         # The Explainer or Tool selector should be the last output message 
-                         return messages[-1]
+                # We can just return the response captured during the "explainer" step
+                if final_response:
+                    return AIMessage(content=final_response)
+                
                 return AIMessage(content="Bir hata oluştu, yanıt alınamadı.")
 
             # Run the asynchronous graph using the session's active event loop
