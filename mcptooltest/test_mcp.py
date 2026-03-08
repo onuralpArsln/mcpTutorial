@@ -65,6 +65,30 @@ async def list_tools(config_path: str):
                         print(f"    Input Schema: {json.dumps(tool.inputSchema, indent=2)}")
                     print()
                 
+                # 5. Execute a specific SQL query
+                query = "SELECT * FROM product_report LIMIT 3"
+                print(f"\n🚀 Executing query: {query}")
+                try:
+                    query_result = await session.call_tool("query", arguments={"sql": query})
+                    print("\n📊 Query Result:")
+                    for content in query_result.content:
+                        if content.type == "text":
+                            print(content.text)
+                        else:
+                            print(content)
+                except Exception as e:
+                    print(f"❌ Failed to execute query via 'query' tool (trying 'read_query' next): {e}")
+                    try:
+                        query_result = await session.call_tool("read_query", arguments={"sql": query})
+                        print("\n📊 Query Result:")
+                        for content in query_result.content:
+                            if content.type == "text":
+                                print(content.text)
+                            else:
+                                print(content)
+                    except Exception as e2:
+                        print(f"❌ Failed to execute query via 'read_query' tool: {e2}")
+                
             except FileNotFoundError:
                 print(f"❌ Failed: Command '{command}' not found on OS.")
             except Exception as e:
