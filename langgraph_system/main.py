@@ -127,7 +127,9 @@ async def run_cli_loop(app):
                                 name = tc['name']
                                 tools_to_call.append(name)
                                 if name == "query":
-                                    query_str = tc.get('args', {}).get('sql', 'Bilinmeyen Sorgu')
+                                    args = tc.get('args', {})
+                                    # Handle both 'sql' and 'query' keys for logging visibility
+                                    query_str = args.get('sql') or args.get('query') or str(args)
                                     print(f"   💾 SQL Sorgusu Oluşturuldu:\n     > {query_str}")
                                     
                             print(f"   📋 Seçilen Araçlar: {tools_to_call}")

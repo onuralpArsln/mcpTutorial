@@ -25,22 +25,20 @@ def load_schema_context() -> str:
         with open(schema_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             
-        context = "SİSTEM BİLGİSİ (VERİTABANI OYSA):\n"
+        context = "DB SCHEMA:\n"
         if "tables" in data:
             for tbl, details in data["tables"].items():
-                context += f"Tablo '{tbl}' ({details.get('description', '')})\nKolonlar:\n"
-                for col in details.get('columns', []):
-                    context += f"  - {col}\n"
+                context += f"- {tbl}: {','.join(details.get('columns', []))}\n"
                     
         if "sql_rules" in data:
-            context += "\nSQL KURALLARI:\n"
+            context += "\nRULES:\n"
             for rule in data["sql_rules"]:
                 context += f"- {rule}\n"
                 
         if "product_aliases" in data:
-            context += "\nÜrün Takma Adları (Kullanıcı bu adları söylerse SQL'de ürün kodlarını kullan):\n"
+            context += "\nALIASES:\n"
             for code, alias in data["product_aliases"].items():
-                context += f"- '{alias}' -> '{code}'\n"
+                context += f"- {alias} -> {code}\n"
                 
         return context
     except Exception as e:
@@ -150,7 +148,8 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
             wait_exponential_jitter=True
         )
 
-        prompt = f"""Kullanıcı niyeti '{intent}'. Gerekli araçları sağladığın SQL kurallarına uyarak kullan.
+        prompt = f"""Kullanıcı niyeti '{intent}'. 
+        TALİMAT: SQL sorgusunu SADECE 'sql' parametresi ile gönder. 'query' parametresini ASLA kullanma.
         
         {load_schema_context()}
         """
@@ -181,6 +180,22 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         """Manually executes tools and collects results into raw_data."""
         last_msg = state["messages"][-1]
         pending_calls = last_msg.tool_calls if hasattr(last_msg, 'tool_calls') else []
+        
+        # --- ROBUST PARAMETER MAPPING (Fix for 3B models) ---
+        for tc in pending_calls:
+            if tc['name'] == 'query':
+                args = tc.get('args', {})
+                # If model used 'query' or nested under 'kwargs', lift it to 'sql'
+                if 'kwargs' in args and isinstance(args['kwargs'], dict) and 'query' in args['kwargs']:
+                    args['sql'] = args['kwargs']['query']
+                elif 'query' in args:
+                    args['sql'] = args['query']
+                
+                # Clean up wrong keys to avoid server-side validation issues
+                if 'query' in args: del args['query']
+                if 'kwargs' in args: del args['kwargs']
+        # ----------------------------------------------------
+
         print(f"[{_ts()}] DEBUG TOOLS ▶ {len(pending_calls)} araç çalıştırılacak: {[tc['name'] for tc in pending_calls]}")
         tool_node = ToolNode(tools)
         _t0 = time.time()
