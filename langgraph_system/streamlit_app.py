@@ -5,9 +5,9 @@ from langchain_core.messages import HumanMessage, AIMessage
 from main import initialize_agent
 
 # Set basic page config
-st.set_page_config(page_title="AI Ad Manager", page_icon="📈", layout="centered")
+st.set_page_config(page_title="ROB", page_icon="📈", layout="centered")
 
-st.title("AI Ad Manager 📈")
+st.title("Reklam Optimizsayon Botu")
 st.markdown("Ask me to analyze your campaigns, look directly at product costs, or optimize performance.")
 
 # Initialize chat history
