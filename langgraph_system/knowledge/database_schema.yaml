@@ -1,0 +1,30 @@
+tables:
+  product_report:
+    description: Ürünler ile ilgili tıklanma sayısı, görüntü, roas, reklam maliyeti gibi  detaylı bilgi tablosu.
+    columns:
+    - 'id: veritabanı id'
+    - 'sorgu_tarihi: toplanan verinin tarihi (YYYY-MM-DD)'
+    - 'sorgu_saati: saati'
+    - 'urun_kodu: ürün kodu (örn. XPUFFY4040KAREPUF)'
+    - 'harcanan_butce: harcanan bütçe'
+    - 'gosterim_sayisi: gösterim'
+    - 'tiklanma_sayisi: tıklanma'
+    - 'reklam_cirosu: reklamdan gelen ciro'
+    - 'harcama_getirisi: ROAS (reklam_cirosu / harcanan_butce) (Eğer 0 ise hiç satış
+      gelmemiştir)'
+    - 'gerceklesen_tbm: tıklama başına maliyet'
+    - 'tbm_teklif: manuel verilen teklif'
+    - 'onerilen_tbm: pazar yeri önerisi'
+    - 'satis_adet: satış adedi'
+    - 'net_satis: net gelir'
+    - 'created_at: kayıt zamanı'
+    - 'gunluk_butce: günlük bütçe limiti'
+sql_rules:
+- Daima çok fazla veri dönmesini engellemek için tüm SQL sorgularının sonuna 'LIMIT 50' ekle.
+- Eğer kullanıcı bir ürünün kısa veya takma ismini söylüyorsa, aşağıdaki 'product_aliases' listesine bakarak onu mutlaka orijinal 'urun_kodu'na çevirip WHERE şartına ekle.
+- Sistemde ayrı bir 'ürünler' tablosu yoktur. Eğer kullanıcı 'neler satıyoruz', 'ürün listesi' gibi genel bir soru sorarsa, 'product_report' tablosundaki 'urun_kodu' kolonundan 'DISTINCT' (benzersiz) değerleri çekerek mevcut ürünleri listele.
+- Hangi ürünümüz ne kadar sattı gibi sorularda 'product_report' tablosunu kullan.
+product_aliases:
+  XPUFFY4040KAREPUF: kare puf
+  ZAYNABED160X200: zayna yatagi
+  XPUFFY6060KAREPUF: kırmızı puf

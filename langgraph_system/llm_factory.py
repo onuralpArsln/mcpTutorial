@@ -17,15 +17,16 @@ def get_llm(model_role: str = "tools") -> BaseChatModel:
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
         # Ensure we pick a tool-capable model for the 'tools' role, like llama3.1
         model_name = os.getenv("OLLAMA_MODEL", "llama3.1")
-        
+        print(f"[LLM_FACTORY] Provider: ollama | Model: {model_name} | URL: {base_url}")
         return ChatOllama(
             base_url=base_url,
             model=model_name,
             temperature=0
         )
-        
+
     elif provider == "gemini":
         model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
+        print(f"[LLM_FACTORY] Provider: gemini | Model: {model_name}")
         return ChatGoogleGenerativeAI(
             model=model_name,
             temperature=0

@@ -55,12 +55,8 @@ if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
             
             async def run_graph():
                 inputs = {
-                    "messages": [user_msg],
-                    "intent": "unknown",
-                    "metrics": {},
-                    "rules": [],
-                    "confidence_score": 0,
-                    "compliance_approved": False
+                    "messages": st.session_state.messages,
+                    "intent": "unknown"
                 }
                 
                 final_response = None
@@ -84,8 +80,14 @@ if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
                                         # only show a snippet of the raw data drawn
                                         snippet = str(msg.content)[:150].replace('\n', ' ')
                                         st.write(f"✅ Veri Çekildi: _{snippet}..._")
-                        elif node in ("explainer", "analyst"):
-                             if node == "explainer" and "messages" in data:
+                        elif node == "analyst":
+                             if "analysis_result" in data:
+                                 st.write(f"🔬 **Analist Notu:** {data['analysis_result'][:300]}...")
+                             if "violates_rules" in data:
+                                 flag = "⚠️ Kural İhlali Tespit Edildi" if data["violates_rules"] else "✅ Kural İhlali Yok"
+                                 st.write(flag)
+                        elif node == "explainer":
+                             if "messages" in data:
                                  m = data["messages"][-1]
                                  content = m.content
                                  if isinstance(content, list):
@@ -93,12 +95,6 @@ if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
                                      final_response = "".join(text_parts).strip()
                                  else:
                                      final_response = str(content).strip()
-                        elif node == "evaluator":
-                             if "confidence_score" in data:
-                                 score = data['confidence_score']
-                                 s = "✅ GÜVENLİ" if score >= 70 else "⚠️ DÜŞÜK GÜVEN"
-                                 st.write(f"⚖️ Güven Puanı: {score}/100 -> {s}")
-                                 
                 # We can just return the response captured during the "explainer" step
                 if final_response:
                     return AIMessage(content=final_response)

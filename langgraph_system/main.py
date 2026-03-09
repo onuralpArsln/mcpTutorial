@@ -5,7 +5,7 @@ from contextlib import AsyncExitStack
 from dotenv import load_dotenv
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 from mcp_adapter import create_langchain_tools
 from graph import create_mcp_graph
@@ -89,25 +89,27 @@ async def initialize_agent():
 
 async def run_cli_loop(app):
     print("Assitan Kullanıma Hazır.")
+    chat_history = []
     
     while True:
         user_msg = input("\nYou: ")
         if user_msg.lower() in ("exit", "quit", "q"):
             break
 
+        # Persist history
+        new_human_msg = HumanMessage(content=user_msg)
+        chat_history.append(new_human_msg)
+
         inputs = {
-            "messages": [HumanMessage(content=user_msg)],
-            "intent": "unknown",
-            "metrics": {},
-            "rules": [],
-            "confidence_score": 0,
-            "compliance_approved": False
+            "messages": chat_history,
+            "intent": "unknown"
         }
         
         print("\n" + "="*50)
         print(" FLOW STARTED: Processing your request...")
         print("="*50)
 
+        final_response_text = ""
         async for output in app.astream(inputs, stream_mode="updates"):
             for node, data in output.items():
                 print(f"\n [BASAMAK]: {node.upper()}")
@@ -120,7 +122,14 @@ async def run_cli_loop(app):
                     if "messages" in data:
                         m = data["messages"][-1]
                         if hasattr(m, 'tool_calls') and m.tool_calls:
-                            tools_to_call = [tc['name'] for tc in m.tool_calls]
+                            tools_to_call = []
+                            for tc in m.tool_calls:
+                                name = tc['name']
+                                tools_to_call.append(name)
+                                if name == "query":
+                                    query_str = tc.get('args', {}).get('sql', 'Bilinmeyen Sorgu')
+                                    print(f"   💾 SQL Sorgusu Oluşturuldu:\n     > {query_str}")
+                                    
                             print(f"   📋 Seçilen Araçlar: {tools_to_call}")
 
                 elif node == "tools":
@@ -130,6 +139,14 @@ async def run_cli_loop(app):
                             if hasattr(msg, 'content') and msg.content:
                                 print(f"   ✅ Veri Çekildi: {msg.content[:100]}...")
 
+                elif node == "analyst":
+                    print(f"   🔬 Analist Çalışıyor...")
+                    if "analysis_result" in data:
+                        print(f"   📊 Analiz: {data['analysis_result'][:200]}...")
+                    if "violates_rules" in data:
+                        flag = "⚠️ KURAL İHLALİ VAR" if data["violates_rules"] else "✅ Kural İhlali Yok"
+                        print(f"   {flag}")
+
                 elif node == "explainer":
                     print(f"   🧠 Yapay Zeka Akıl Yürütüyor...")
                     if "messages" in data:
@@ -137,17 +154,15 @@ async def run_cli_loop(app):
                         content = m.content
                         if isinstance(content, list):
                             text_parts = [part.get("text", "") for part in content if isinstance(part, dict) and part.get("type") == "text"]
-                            clean_text = "".join(text_parts).strip()
+                            final_response_text = "".join(text_parts).strip()
                         else:
-                            clean_text = str(content).strip()
-                        print(f"    Öneri:\n\n{clean_text}")
+                            final_response_text = str(content).strip()
+                        print(f"    Öneri:\n\n{final_response_text}")
 
-                elif node == "evaluator":
-                    print(f"   ⚖️ Güven Puanlaması Yapılıyor...")
-                    if "confidence_score" in data:
-                        score = data['confidence_score']
-                        status = " GÜVENLİ" if score >= 70 else "⚠️ DÜŞÜK GÜVEN"
-                        print(f"    Puan: {score}/100 -> {status}")
+
+        # Capture response in history
+        if final_response_text:
+            chat_history.append(AIMessage(content=final_response_text))
 
         print("\n" + "="*50)
         print("🏁 FLOW COMPLETED")
@@ -169,6 +184,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("\n Sonlanıyor...")
     except Exception as e:
+        print(f"\n[DEBUG FULL EXCEPTION]: {repr(e)}")
         if "RESOURCE_EXHAUSTED" in str(e):
             print("\n⚠️ API kotası doldu. Birkaç dakika bekleyip tekrar deneyin.")
             print("   (Günlük Free Tier limiti: 20 istek. Gece 00:00'da sıfırlanır.)")

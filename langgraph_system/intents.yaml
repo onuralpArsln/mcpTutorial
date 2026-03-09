@@ -24,10 +24,8 @@ intents:
       - "geçen hafta satışlar nasıldı"
       - "XPUFFY4040KAREPUF kampanya metrikleri nelerdir"
     tools:
-      - get_performance_metrics      # source: mcp_server.py (analytics)
-      - get_strategy_rules           # source: mcp_server.py (analytics)
-      - run_pattern_recognition      # source: mcp_server.py (analytics)
-      # future: - get_db_analytics   # source: database_mcp_server.py
+      - query                        # source: postgres mcp (analytics)
+      - get_strategy_rules           # source: mcp_server.py (rules)
 
   info_only:
     description: "Ürün listesi, maliyet bilgisi, genel sistem soruları"
@@ -35,41 +33,6 @@ intents:
       - "hangi ürünler var"
       - "ürün listesini göster"
       - "XPUFFY6060KAREPUF maliyeti nedir"
-      - "sistem bilgisi ver"
     tools:
-      - list_products                # source: mcp_server.py
-      - get_product_costs            # source: mcp_server.py
-      - system_info                  # source: mcp_server.py
-      - notlari_listele              # source: mcp_server.py
-      # future: - search_product_db  # source: database_mcp_server.py
+      - query                        # source: postgres mcp
 
-  scale_up:
-    description: "Bütçeyi artır, kampanyayı büyüt, harcamayı yükselt"
-    examples:
-      - "kampanya bütçesini artır"
-      - "scale up yap"
-      - "daha fazla harca"
-    tools:
-      - get_performance_metrics      # source: mcp_server.py
-      - get_strategy_rules           # source: mcp_server.py
-
-  optimize:
-    description: "Düşük performans düzelt, bid azalt, verimsizlik gider"
-    examples:
-      - "verimsiz kampanyaları düzelt"
-      - "optimize et"
-      - "performansı iyileştir"
-    tools:
-      - get_performance_metrics      # source: mcp_server.py
-      - get_strategy_rules           # source: mcp_server.py
-      - run_pattern_recognition      # source: mcp_server.py
-
-  file_ops:
-    description: "Dosya oluştur, yaz, oku ile ilgili işlemler"
-    examples:
-      - "bir dosya oluştur"
-      - "notlarımı kaydet"
-      - "dosyayı yaz"
-    tools:
-      - dosya_yaz                    # source: mcp_server.py
-      - notlari_listele              # source: mcp_server.py

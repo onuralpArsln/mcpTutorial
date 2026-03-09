@@ -10,7 +10,10 @@ class MCPTool(BaseTool):
     
     async def _arun(self, **kwargs) -> str:
         try:
-            result = await self.session.call_tool(self.name, arguments=kwargs)
+            # LangGraph sometimes wraps arguments under a 'kwargs' key. Unwrap them if they exist.
+            call_args = kwargs.get('kwargs', kwargs) if isinstance(kwargs.get('kwargs'), dict) else kwargs
+            
+            result = await self.session.call_tool(self.name, arguments=call_args)
             if hasattr(result, 'content') and len(result.content) > 0:
                 return result.content[0].text
             return str(result)

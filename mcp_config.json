@@ -5,11 +5,14 @@
       "command": "python3",
       "args": ["langgraph_system/mcp_server.py"]
     },
-    "postgresql-example": {
+    "postgresql": {
       "type": "stdio",
-      "command": "echo",
-      "args": ["Postgres placeholder"],
-      "disabled": true
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://mcp_readonly:mcp35--@192.168.0.60:5432/xpermate_farm"
+      ]
     }
   }
 }

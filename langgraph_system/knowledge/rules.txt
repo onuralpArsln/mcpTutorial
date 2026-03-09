@@ -2,7 +2,7 @@
 # Format: [konu] etiketiyle bölümlere ayrılmış kurallar
 # Bu dosyayı düzenleyerek kuralları güncelleyebilirsiniz.
 
-[analiz]
+[analyze]
 - CTR %1.5'in altındaysa reklam kreatifi yenilenmelidir.
 - ROAS 3.0'ın altına düşerse kampanya bütçesi azaltılmalıdır.
 - Dönüşüm Oranı (CVR) %2.0'ın altındaysa açılış sayfası (landing page) gözden geçirilmelidir.
