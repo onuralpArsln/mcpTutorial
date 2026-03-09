@@ -90,7 +90,8 @@ async def initialize_agent():
 async def run_cli_loop(app):
     print("Assitan Kullanıma Hazır.")
     chat_history = []
-    
+    context_summary = ""
+
     while True:
         user_msg = input("\nYou: ")
         if user_msg.lower() in ("exit", "quit", "q"):
@@ -102,7 +103,8 @@ async def run_cli_loop(app):
 
         inputs = {
             "messages": chat_history,
-            "intent": "unknown"
+            "intent": "unknown",
+            "context_summary": context_summary,
         }
         
         print("\n" + "="*50)
@@ -160,6 +162,8 @@ async def run_cli_loop(app):
                         else:
                             final_response_text = str(content).strip()
                         print(f"    Öneri:\n\n{final_response_text}")
+                    if "context_summary" in data:
+                        context_summary = data["context_summary"]
 
 
         # Capture response in history

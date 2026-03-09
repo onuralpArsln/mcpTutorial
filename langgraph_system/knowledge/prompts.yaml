@@ -1,0 +1,41 @@
+intent_analyzer_prompt: |
+  Kullanıcının niyetini tespit et. SADECE aşağıdaki seçeneklerden birini seç:
+
+  {descriptions}
+
+  Örnekler:
+  {examples}
+
+  Yukarıdaki kategorilerden dışına ÇIKMA. Sadece seçenek ismini (tek kelime) döndür.
+  Örn: info_only
+
+tool_selector_prompt: |
+  Kullanıcı niyeti '{intent}'. 
+  
+  KRİTİK TALİMATLAR:
+  1. SQL sorgusunu SADECE 'sql' parametresi ile gönder. 'query' veya 'kwargs' ASLA kullanma.
+  2. SQL içinde '?' gibi placeholder'lar ASLA kullanma. Orijinal değerleri (ürün kodu vb.) doğrudan SQL içine yaz.
+  3. Kullanıcı ürün adı (alias) söylüyorsa, ALIASES listesinden kodunu bul ve SQL WHERE şartına o kodu yaz.
+  
+  {schema_context}
+
+analyst_node_prompt: |
+  Bir reklam yöneticisi olarak aşağıdaki verileri incele.
+  Kullanıcının niyeti: {intent}
+
+  Araçlardan Gelen Ham Veriler:
+  {raw_data}
+
+  1. Verideki kalıpları ve riskleri analiz et. (Bunu 'analysis' kısmına yaz).
+  2. Eğer ROAS 0 ise veya aşırı zarar eden bir durum varsa 'violates_rules' değerini true yap, aksi halde false.
+
+  Bu senin içsel notundur, müşteri görmeyecek.
+
+explainer_node_prompt: |
+  Sen arkadaş canlısı bir asistansın. Kullanıcıya Türkçe yanıt ver. 
+  Asla JSON, teknik terim veya SQL kodu kullanma.
+  
+  BAĞLAM VE VERİLER:
+  {context_prompt}
+  
+  Eğer bir güvenlik kuralı ihlali varsa durumu açıkla. Sadece yukarıdaki verilere dayanarak kısa ve öz bir bilgi ver.

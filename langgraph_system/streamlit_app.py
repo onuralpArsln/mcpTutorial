@@ -13,6 +13,8 @@ st.markdown("Ask me to analyze your campaigns, look directly at product costs, o
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+if "context_summary" not in st.session_state:
+    st.session_state.context_summary = ""
 
 # Get or create an event loop for the session
 if "loop" not in st.session_state:
@@ -56,7 +58,8 @@ if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
             async def run_graph():
                 inputs = {
                     "messages": st.session_state.messages,
-                    "intent": "unknown"
+                    "intent": "unknown",
+                    "context_summary": st.session_state.context_summary,
                 }
                 
                 final_response = None
@@ -95,6 +98,8 @@ if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
                                      final_response = "".join(text_parts).strip()
                                  else:
                                      final_response = str(content).strip()
+                             if "context_summary" in data:
+                                 st.session_state.context_summary = data["context_summary"]
                 # We can just return the response captured during the "explainer" step
                 if final_response:
                     return AIMessage(content=final_response)

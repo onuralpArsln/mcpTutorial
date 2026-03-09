@@ -4,23 +4,24 @@ tables:
     columns:
     - 'id: veritabanı id'
     - 'sorgu_tarihi: toplanan verinin tarihi (YYYY-MM-DD)'
-    - 'sorgu_saati: saati'
+    - 'sorgu_saati: sorgunun yapıldığı saat'
     - 'urun_kodu: ürün kodu (örn. XPUFFY4040KAREPUF)'
     - 'harcanan_butce: harcanan bütçe'
     - 'gosterim_sayisi: gösterim'
     - 'tiklanma_sayisi: tıklanma'
     - 'reklam_cirosu: reklamdan gelen ciro'
-    - 'harcama_getirisi: ROAS (reklam_cirosu / harcanan_butce) (Eğer 0 ise hiç satış
+    - 'harcama_getirisi: ROAS reklam cirosunun harcan büteçeye orandırı (Eğer 0 ise hiç satış
       gelmemiştir)'
     - 'gerceklesen_tbm: tıklama başına maliyet'
     - 'tbm_teklif: manuel verilen teklif'
-    - 'onerilen_tbm: pazar yeri önerisi'
-    - 'satis_adet: satış adedi'
-    - 'net_satis: net gelir'
+    - 'onerilen_tbm: pazar yerinin bize önerisi'
+    - 'satis_adet: ürün satış adedi'
+    - 'net_satis: ürün satışının net gelir'
     - 'created_at: kayıt zamanı'
-    - 'gunluk_butce: günlük bütçe limiti'
+    - 'gunluk_butce: reklam için günlük bütçe limiti'
 sql_rules:
-- Daima çok fazla veri dönmesini engellemek için tüm SQL sorgularının sonuna 'LIMIT 50' ekle.
+- Daima çok fazla veri dönmesini engellemek için tüm SQL sorgularının sonuna 'LIMIT 30' ekle.
+- Eğer tek bir değer soruluyor ise, sadece en güncel / en yeni / en büyük / en düşük veriye ulaşmak için 'LIMIT 1' kullan.
 - Eğer kullanıcı bir ürünün kısa veya takma ismini söylüyorsa, aşağıdaki 'product_aliases' listesine bakarak onu mutlaka orijinal 'urun_kodu'na çevirip WHERE şartına ekle.
 - Sistemde ayrı bir 'ürünler' tablosu yoktur. Eğer kullanıcı 'neler satıyoruz', 'ürün listesi' gibi genel bir soru sorarsa, 'product_report' tablosundaki 'urun_kodu' kolonundan 'DISTINCT' (benzersiz) değerleri çekerek mevcut ürünleri listele.
 - Hangi ürünümüz ne kadar sattı gibi sorularda 'product_report' tablosunu kullan.

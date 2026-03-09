@@ -15,7 +15,7 @@ class IntentRegistry:
 
     def __init__(self, yaml_path: str | None = None):
         if yaml_path is None:
-            yaml_path = os.path.join(os.path.dirname(__file__), "intents.yaml")
+            yaml_path = os.path.join(os.path.dirname(__file__), "knowledge", "intents.yaml")
         
         with open(yaml_path, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)

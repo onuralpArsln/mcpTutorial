@@ -10,12 +10,31 @@ from pydantic import BaseModel
 import yaml
 import time
 import datetime
+import re
+import os
 
 from intent_registry import IntentRegistry
 
 def _ts():
     """Returns current timestamp string for debug output."""
     return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
+
+def load_prompt(prompt_name: str, **kwargs) -> str:
+    """Reads a specific prompt template from prompts.yaml and formats it."""
+    try:
+        import os
+        import yaml
+        prompt_path = os.path.join(os.path.dirname(__file__), "knowledge", "prompts.yaml")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        
+        template = data.get(prompt_name, "")
+        if template and kwargs:
+            return template.format(**kwargs)
+        return template
+    except Exception as e:
+        print(f"[{_ts()}] ERROR: Prompt Could Not Load - {prompt_name}: {e}")
+        return ""
 
 def load_schema_context() -> str:
     """Reads the database schema and aliases from YAML and formats it for the LLM."""
@@ -25,10 +44,16 @@ def load_schema_context() -> str:
         with open(schema_path, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
             
-        context = "DB SCHEMA:\n"
-        if "tables" in data:
-            for tbl, details in data["tables"].items():
-                context += f"- {tbl}: {','.join(details.get('columns', []))}\n"
+        context = ""
+        if "product_aliases" in data:
+            context += "ÜRÜN KODLARI (Mutlaka bunları kullan):\n"
+            for code, alias in data["product_aliases"].items():
+                context += f"- {alias} -> {code}\n"
+        
+        context += "\nTABLO: product_report\n"
+        # Only technical column names to avoid confusing 3B models with descriptions
+        context += "KOLONLAR (SADECE BUNLARI KULLAN): id, sorgu_tarihi, urun_kodu, harcanan_butce, gosterim_sayisi, tiklanma_sayisi, reklam_cirosu, harcama_getirisi, gerceklesen_tbm, tbm_teklif, onerilen_tbm, satis_adet, net_satis, created_at, gunluk_butce\n"
+        context += "HINT: ROAS = harcama_getirisi, Reklam Maliyeti = harcanan_butce\n"
                     
         if "sql_rules" in data:
             context += "\nRULES:\n"
@@ -46,14 +71,30 @@ def load_schema_context() -> str:
 
 
 
+_PRODUCT_CODE_RE = re.compile(r'\b[A-Z][A-Z0-9]{9,}\b')
+
+def _build_context_summary(intent: str, raw_data: str, last_human_content: str) -> str:
+    """Builds a compact (~50-100 token) context summary for the next turn."""
+    codes = set(_PRODUCT_CODE_RE.findall(raw_data)) | set(_PRODUCT_CODE_RE.findall(last_human_content))
+    parts = [f"Önceki niyet: {intent}"]
+    if codes:
+        parts.append(f"Ürün kodları: {', '.join(sorted(codes))}")
+    if raw_data:
+        # Take only the first 200 chars of raw_data as a snippet
+        snippet = raw_data[:200].replace('\n', ' ').strip()
+        parts.append(f"Veri özeti: {snippet}")
+    return " | ".join(parts)
+
+
 class AgentState(TypedDict):
     """The dynamic state of the hybrid target agent."""
     messages: Annotated[List[BaseMessage], add_messages]
     intent: str
-    
+
     # Context
     raw_data: str
-    
+    context_summary: str
+
     # Analysis & Safeguards
     analysis_result: str
     violates_rules: bool
@@ -85,16 +126,7 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         descriptions = registry.get_intent_descriptions()
         examples = registry.get_few_shot_examples()
 
-        prompt = f"""Kullanıcının niyetini tespit et. SADECE aşağıdaki seçeneklerden birini seç:
-
-        {descriptions}
-
-        Örnekler:
-        {examples}
-
-        Yukarıdaki kategorilerden dışına ÇIKMA. Sadece seçenek ismini (tek kelime) döndür.
-        Örn: info_only
-        """
+        prompt = load_prompt("intent_analyzer_prompt", descriptions=descriptions, examples=examples)
         
         last_human_msg = next((m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), None)
         prompt_chars = len(prompt)
@@ -148,11 +180,11 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
             wait_exponential_jitter=True
         )
 
-        prompt = f"""Kullanıcı niyeti '{intent}'. 
-        TALİMAT: SQL sorgusunu SADECE 'sql' parametresi ile gönder. 'query' parametresini ASLA kullanma.
+        context_summary = state.get("context_summary", "")
+        context_block = f"\nÖNCEKİ BAĞLAM: {context_summary}\n" if context_summary else ""
         
-        {load_schema_context()}
-        """
+        prompt = load_prompt("tool_selector_prompt", intent=intent, schema_context=load_schema_context())
+        
         last_human_msg = next((m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), None)
         prompt_chars = len(prompt)
         tool_names = [t.name for t in intent_tools]
@@ -182,18 +214,48 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         pending_calls = last_msg.tool_calls if hasattr(last_msg, 'tool_calls') else []
         
         # --- ROBUST PARAMETER MAPPING (Fix for 3B models) ---
+        user_query = ""
+        for m in state["messages"]:
+            if isinstance(m, HumanMessage):
+                user_query = m.content.lower()
+
         for tc in pending_calls:
             if tc['name'] == 'query':
                 args = tc.get('args', {})
-                # If model used 'query' or nested under 'kwargs', lift it to 'sql'
-                if 'kwargs' in args and isinstance(args['kwargs'], dict) and 'query' in args['kwargs']:
-                    args['sql'] = args['kwargs']['query']
-                elif 'query' in args:
+                # Extract SQL from nested structure if needed
+                if 'kwargs' in args and isinstance(args['kwargs'], dict):
+                    inner = args['kwargs']
+                    if 'sql' in inner: args['sql'] = inner['sql']
+                    elif 'query' in inner: args['sql'] = inner['query']
+                elif 'query' in args and 'sql' not in args:
                     args['sql'] = args['query']
                 
-                # Clean up wrong keys to avoid server-side validation issues
-                if 'query' in args: del args['query']
-                if 'kwargs' in args: del args['kwargs']
+                # Auto-fix for common 3B errors: 'ROAS' column name
+                if 'sql' in args and 'ROAS' in args['sql']:
+                    args['sql'] = args['sql'].replace('ROAS', 'harcama_getirisi')
+                
+                # Auto-fix for placeholders '?' and missing aliases
+                if 'sql' in args and '?' in args['sql']:
+                    # Try to find an alias in the user query and replace '?' with its code
+                    schema_path = os.path.join(os.path.dirname(__file__), "knowledge", "database_schema.yaml")
+                    with open(schema_path, "r") as f:
+                        schema_data = yaml.safe_load(f)
+                    
+                    found_code = None
+                    for code, alias in schema_data.get('product_aliases', {}).items():
+                        if alias.lower() in user_query:
+                            found_code = code
+                            break
+                    
+                    if found_code:
+                        args['sql'] = args['sql'].replace('?', f"'{found_code}'")
+                    else:
+                        # If no alias found, maybe it's a raw string we can find
+                        pass
+
+                # Clean up
+                for k in ['query', 'kwargs', 'type']:
+                    if k in args: del args[k]
         # ----------------------------------------------------
 
         print(f"[{_ts()}] DEBUG TOOLS ▶ {len(pending_calls)} araç çalıştırılacak: {[tc['name'] for tc in pending_calls]}")
@@ -237,16 +299,7 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
              stop_after_attempt=3, wait_exponential_jitter=True
         )
 
-        prompt = f"""Bir reklam yöneticisi olarak aşağıdaki verileri incele.
-        Kullanıcının niyeti: {state['intent']}
-
-        Araçlardan Gelen Ham Veriler:
-        {state['raw_data']}
-
-        1. Verideki kalıpları ve riskleri analiz et. (Bunu 'analysis' kısmına yaz).
-        2. Eğer ROAS 0 ise veya aşırı zarar eden bir durum varsa 'violates_rules' değerini true yap, aksi halde false.
-
-        Bu senin içsel notundur, müşteri görmeyecek."""
+        prompt = load_prompt("analyst_node_prompt", intent=state['intent'], raw_data=state['raw_data'])
 
         print(f"[{_ts()}] DEBUG ANALYST ▶ ainvoke başlıyor | prompt: {len(prompt)} karakter")
         _t0 = time.time()
@@ -275,29 +328,34 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         else:
              context_prompt = f"Veri Özeti:\n{state['raw_data']}"
              
-        prompt = f"""Sen arkadaş canlısı bir asistansın. Kullanıcıya Türkçe yanıt ver. 
-        Asla JSON, teknik terim veya SQL kodu kullanma.
-        
-        BAĞLAM VE VERİLER:
-        {context_prompt}
-        
-        Eğer bir güvenlik kuralı ihlali varsa durumu açıkla. Sadece yukarıdaki verilere dayanarak kısa ve öz bir bilgi ver.
-        """
+        prompt = load_prompt("explainer_node_prompt", context_prompt=context_prompt)
 
-        # We strip the full message history to avoid role confusion in small models
-        # and just provide the human's last question + the data context.
+        # Build message list: system + optional previous AI turn + current human message
         last_human_msg = next((m for m in reversed(state["messages"]) if isinstance(m, HumanMessage)), None)
+        prev_ai_msg = next(
+            (m for m in reversed(state["messages"])
+             if isinstance(m, AIMessage) and not getattr(m, "tool_calls", None)),
+            None
+        )
         messages_for_llm = [SystemMessage(content=prompt)]
+        if prev_ai_msg:
+            messages_for_llm.append(prev_ai_msg)
         if last_human_msg:
              messages_for_llm.append(last_human_msg)
 
-        print(f"[{_ts()}] DEBUG EXPLAINER ▶ ainvoke başlıyor | prompt: {len(prompt)} karakter | mesaj sayısı: {len(messages_for_llm)}")
+        print(f"[{_ts()}] DEBUG EXPLAINER ▶ ainvoke başlıyor | prompt: {len(prompt)} karakter | mesaj sayısı: {len(messages_for_llm)} (önceki AI mesajı: {prev_ai_msg is not None})")
         _t0 = time.time()
         response = await model_plain.ainvoke(messages_for_llm)
         _elapsed = time.time() - _t0
         print(f"[{_ts()}] DEBUG EXPLAINER ◀ ainvoke tamamlandı | süre: {_elapsed:.2f}s")
         print(f"[{_ts()}] DEBUG EXPLAINER ◀ yanıt uzunluğu: {len(str(response.content))} karakter")
-        return {"messages": [response]}
+
+        # Build compact context_summary for the next turn
+        last_human_content = last_human_msg.content if last_human_msg else ""
+        new_context_summary = _build_context_summary(
+            state.get("intent", ""), state.get("raw_data", ""), last_human_content
+        )
+        return {"messages": [response], "context_summary": new_context_summary}
 
     # -------------------------------------------------------------------------
     # Wire up the dynamic graph
