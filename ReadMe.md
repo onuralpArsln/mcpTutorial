@@ -17,6 +17,10 @@ curl -fsSL https://ollama.com/install.sh | sh
 ```
 
 ```bash
+ollama list
+```
+
+```bash
 ollama run llama3.1
 ollama run qwen2.5:3b
 ```
