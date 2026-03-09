@@ -24,7 +24,11 @@ ollama list
 ollama run llama3.1
 ollama run qwen2.5:3b
 ```
+# TEST
 
+```bash
+python3 -m pipenv run python3 mcptooltest/run_8_tests.py
+```
 
 
 # 🚀 Kullanım (Draft Final Target)
@@ -146,8 +150,9 @@ graph TD
     class K finalBox;
 ```
 
-## State
+## State & Yönlendirme Şeması (Routing Architecture)
 
+Sistem artık gelen Niyetin (Intent) zorluk derecesine göre dinamik olarak yönlendirme yapmaktadır. Bu ayarlar `intents.yaml` dosyasındaki `route_type` ile kontrol edilir.
 
 ```mermaid
 flowchart LR
@@ -162,14 +167,14 @@ flowchart LR
     C["🗄️ VERİ KATMANI<br>(Tool Çalıştırma)"]:::mainStep
     
     %% Dual Track
-    D["🕵️ GİZLİ ANALİST<br>(ROAS/Kural Kontrolü)"]:::secretStep
+    D["🕵️ ANALİST MODU<br>(Matematik & Senaryo)"]:::secretStep
     E["💬 AÇIKLAYICI<br>(Kullanıcı Yanıtı)"]:::mainStep
 
     %% --- BAĞLANTILAR (AKIŞ) ---
     A ==> B ==> C
     
-    C ==>|Analiz / Optimizasyon| D
-    C ==>|Sadece Bilgi / Sohbet| E
+    C -- "route_type: deep_track\nveya orchestration" --> D
+    C -- "route_type: fast_track" --> E
     
     D ==>|Analiz Notu &\nGüvenlik Koruması| E
 
@@ -177,6 +182,19 @@ flowchart LR
     C -.-> C1["raw_data\n(Ham Araç Çıktısı)"]:::subCategory
     D -.-> D1["analysis_result &\nviolates_rules"]:::subCategory
 ```
+
+### İş Akışı Rotaları (Workflow Tracks)
+
+LangGraph mimarisindeki **Node (Düğüm)** rotaları 3 ana iş akışına bölünmüştür:
+
+1. **Fast-Track (Hızlı Rota):** (`Intent Router -> Tool Selector -> Explainer Node`)
+   - Yalnızca veri çekme ve özetleme işlemleri içindir (Örn: "Hangi puf modellerimiz var?"). Matematiksel analiz gerektirmez, doğrudan veritabanından cevap döner.
+2. **Deep-Track (Derin Analiz):** (`Intent Router -> Tool Selector -> Analyst Node -> Explainer Node`)
+   - Veri çekildikten sonra matematiksel işlem, ROAS kıyaslaması, anormallik tespiti (outlier) veya zarar saptırma analizleri gerektiren sorular içindir. `Analyst` düğümü ML ve LLM özelliklerini birleştirir.
+3. **Orchestration (Tahmin ve Senaryo):** (`Intent Router -> Tool Selector -> Analyst Node -> Explainer Node`)
+   - Bütçe simülasyonları, zaman serisi/trend analizleri veya farklı DB'lerden (Cross-DB) gelen verilerin birleştirilmesini (Memory Join) gerektiren en karmaşık iş akışıdır.
+
+*(Not: Bu sistem yalnızca okuma, analiz ve tavsiye yapar "Read-Only/Advisor". Veritabanına doğrudan yazma eylemi (Write/Action) yoktur).*
 
 ---
 

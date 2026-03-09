@@ -1,38 +1,52 @@
-# langgraph_system/intents.yaml
+# langgraph_system/knowledge/intents.yaml
 # ==========================================================================
-# SINGLE SOURCE OF TRUTH for all intents and their associated tools.
+# SINGLE SOURCE OF TRUTH for all intents, tools, and routing tracks.
 #
-# HOW TO ADD A NEW MCP:
-#   1. Start your new MCP server.
-#   2. Find the tool names it exposes.
-#   3. Add those tool names under the relevant intent's 'tools' list below.
-#   4. That's it. No Python code changes needed.
-#
-# HOW TO ADD A NEW INTENT:
-#   1. Add a new top-level entry under 'intents'.
-#   2. Fill in description, examples, and tools.
-#   3. The system will automatically pick it up on next run.
+# ROUTE TYPES:
+# - fast_track: Goes directly to Explainer after fetching data. No math/analysis.
+# - deep_track: Goes to Analyst node for metric comparisons and logic.
+# - orchestration: Goes to Orchestrator/Analyst for multi-DB merges and forecasting.
 # ==========================================================================
 
 intents:
 
-  analyze:
-    description: "Performansı göster, rapor ver, KPI sorgula, satış/reklam analizi yap"
+  data_fetch:
+    description: "Sadece veri çekme, listeleme, filtreleme (yorumsuz bilgi)"
+    route_type: "fast_track"
     examples:
-      - "roas nedir"
-      - "ZAYNABED160X200 performans raporunu göster"
-      - "geçen hafta satışlar nasıldı"
-      - "XPUFFY4040KAREPUF kampanya metrikleri nelerdir"
-    tools:
-      - query                        # source: postgres mcp (analytics)
-      - get_strategy_rules           # source: mcp_server.py (rules)
-
-  info_only:
-    description: "Ürün listesi, maliyet bilgisi, genel sistem soruları"
-    examples:
-      - "hangi ürünler var"
-      - "ürün listesini göster"
-      - "XPUFFY6060KAREPUF maliyeti nedir"
+      - "hangi puf modellerimiz var"
+      - "tüm ürünleri listeler misin"
+      - "ZAYNABED160X200 kodlu ürünün güncel kar marjını getir"
+      - "tıklanma sayısı 100'ün altında kalan kampanyaları getir"
     tools:
       - query                        # source: postgres mcp
+      - get_product_costs            # source: mcp_server.py (mock/future)
+      - system_info
 
+  advanced_data_mining:
+    description: "Metrik kıyaslama, oran/yüzde hesaplama, strateji kurallarını harmanlama (matematik ve analiz)"
+    route_type: "deep_track"
+    examples:
+      - "ZAYNABED ile MINIPUF'u kıyasla, hangisi daha karlı"
+      - "MINIPUF'un reklam maliyeti, ürün maliyetinin yüzde kaçına denk geliyor"
+      - "XPUFFY için TBM farkı yüzdesel olarak kaç"
+      - "XPUFFY için strateji kurallarını verilerle kıyasla"
+    tools:
+      - query                        # source: postgres mcp (analytics)
+      - get_strategy_rules           # source: mcp_server.py
+      - compare_metrics              # source: mcp_server.py
+      - calculate_ratio              # source: mcp_server.py
+      - export_csv_report            # source: mcp_server.py
+
+  forecast_strategy:
+    description: "Gelecek yatırımı tavsiyesi (ör: ekstra bütçe nereye harcanmalı), çapraz DB analizi, trend büyümesi"
+    route_type: "orchestration"
+    examples:
+      - "cebimde ekstra 500 TL var, sence hangi ürünün bütçesine yatırmalıyım"
+      - "şu anki bütçe durumunu PostgreSQL tablosu ile eşleştir"
+      - "geçen haftaki ciro ile bu haftaki büyüme ne durumda"
+    tools:
+      - query                        # source: postgres mcp
+      - forecast_budget_allocation   # source: mcp_server.py
+      - cross_db_join_tool           # source: mcp_server.py
+      - time_series_filter           # source: mcp_server.py

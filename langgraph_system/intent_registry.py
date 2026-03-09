@@ -65,3 +65,12 @@ class IntentRegistry:
 
         print(f"   🔧 Intent '{intent}' → Loaded {len(filtered)} tools: {[t.name for t in filtered]}")
         return filtered
+
+    def get_route_type_for_intent(self, intent: str) -> str:
+        """
+        Returns the route_type defined in intents.yaml (e.g., 'fast_track', 'deep_track', 'orchestration').
+        Defaults to 'fast_track' if not found.
+        """
+        if intent not in self._intents:
+            return "fast_track"
+        return self._intents[intent].get("route_type", "fast_track")

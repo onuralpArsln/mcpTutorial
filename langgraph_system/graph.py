@@ -369,8 +369,9 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
 
     def route_after_tools(state: AgentState):
         intent = state.get("intent", "")
-        route = "analyst" if intent in ["analyze", "optimize", "scale_up"] else "explainer"
-        print(f"[{_ts()}] DEBUG ROUTE ▶ tools sonrası yönlendirme: '{route}' (intent: '{intent}')")
+        route_type = registry.get_route_type_for_intent(intent)
+        route = "analyst" if route_type in ["deep_track", "orchestration"] else "explainer"
+        print(f"[{_ts()}] DEBUG ROUTE ▶ tools sonrası yönlendirme: '{route}' (intent: '{intent}', route_type: '{route_type}')")
         return route
 
     workflow = StateGraph(AgentState)
