@@ -1,6 +1,7 @@
 # langgraph_system/mcp_server.py
 from mcp.server.fastmcp import FastMCP
 import os
+import difflib
 import platform
 
 # Specialized server for LangGraph experimentation
@@ -34,6 +35,7 @@ def notlari_listele() -> str:
         return f"Error: {str(e)}"
 
 # --- Experimental Tools (New!) ---
+
 
 @mcp.tool()
 def save_product_alias(urun_kodu: str, alias: str) -> str:
@@ -74,7 +76,7 @@ def get_strategy_rules(intent_type: str) -> str:
         # Parse the file: find the [intent_type] section
         tag = f"[{intent_type.lower()}]"
         if tag not in content:
-            return f"No rules found for intent: '{intent_type}'. Available: [analyze], [reklam_acma], [indirim_kupon], [scale_up], [optimize]"
+            return f"No rules found for intent: '{intent_type}'. Available: [analiz], [reklam_acma], [indirim_kupon], [scale_up], [optimize]"
         
         # Extract the block between this tag and the next tag
         start = content.index(tag) + len(tag)
