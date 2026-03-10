@@ -16,15 +16,15 @@ tables:
       - "harcanan_butce: advertising budget spent. Türkçe: harcama, harcanan, maliyet, bütçe harcaması."
       - "gosterim_sayisi: number of ad impressions. Türkçe: gösterim."
       - "tiklanma_sayisi: number of ad clicks. Türkçe: tıklama."
-      - "reklam_cirosu: revenue generated from ads. Türkçe: ciro, reklam cirosu, satış geliri."
+      - "reklam_cirosu: revenue generated from ads. O ürüne tıklayan birinin yaptığı HERHANGİ BİR satışı gösterir. Reklam performansını ölçer."
       - "harcama_getirisi: ROAS value. Türkçe: ROAS, getiri, harcama getirisi. Note: For aggregate data, calculate manually."
       - "gerceklesen_tbm: actual cost per click. Türkçe: TBM, tıklama başı maliyet."
       - "tbm_teklif: manually given CPC bid. Türkçe: teklif, TBM teklifi."
-      - "onerilen_tbm: marketplace recommended CPC bid. Türkçe: önerilen TBM."
+      - "onerilen_tbm: marketplace recommended CPC bid. Türkçe: önerilen TBM. Not: Bu veri bir metindir (string), matematiksel kıyaslama yapılamaz."
       - "satis_adet: number of units sold. Türkçe: satış adedi, kaç adet sattı."
-      - "net_satis: net revenue from product sales. Türkçe: net satış, ürün cirosu."
+      - "net_satis: net revenue from ONLY this product. O ürünün kendi satış geliri (adet * fiyat)."
       - "created_at: record creation timestamp."
-      - "gunluk_butce: daily advertising budget limit. Türkçe: günlük bütçe."
+      - "gunluk_butce: daily advertising budget limit. Türkçe: günlük bütçe. 0 ise kampanya KAPALIDIR."
 
 sql_rules:
 
@@ -34,6 +34,11 @@ sql_rules:
 
   - |
     If the user asks for totals such as total sales, total revenue,
+  - |
+    SNAPSHOT AGGREGATION RULE (CRITICAL):
+    This table contains multiple snapshots per day. Direct SUM() will cause OVER-COUNTING.
+    To get accurate totals (spend, sales, revenue), ALWAYS use this subquery pattern:
+    SELECT SUM(daily_max) FROM (SELECT MAX(metric_name) as daily_max FROM product_report WHERE ... GROUP BY sorgu_tarihi, urun_kodu) as t
   - |
     ROAS RULES:
     1. If the user asks for "Current ROAS" or "ROAS of a specific product", simply use the 'harcama_getirisi' column.
@@ -82,12 +87,24 @@ sql_rules:
     use the sorgu_tarihi column.
 
   - |
-    Date examples:
+    TIMEZONE & DATE OFFSET RULE:
+    Data at 12:00 TR time is logged with 'sorgu_tarihi' at 21:00 UTC of the PREVIOUS day.
+    - If user says "Today", use: sorgu_tarihi = (SELECT MAX(sorgu_tarihi) FROM product_report)
+    - Or use: sorgu_tarihi = CURRENT_DATE - INTERVAL '1 day'
+    As CURRENT_DATE usually has zero records.
 
-    today → sorgu_tarihi = CURRENT_DATE
-    yesterday → sorgu_tarihi = CURRENT_DATE - INTERVAL '1 day'
-    last 7 days → sorgu_tarihi >= CURRENT_DATE - INTERVAL '7 day'
+  - |
+    GENERAL SQL FORMATTING RULES:
+    1. DO NOT use placeholders like '?' in SQL. Embed values directly (e.g., WHERE urun_kodu = '...').
+    2. RETURN ONLY the SQL query in the first step. No explanations.
+    3. Use ILIKE for product code matching and extract keywords for search.
+
+  - |
+    CAMPAIGN STATUS DIAGNOSIS:
+    - gunluk_butce = 0 -> Campaign is PAUSED (KAPALI).
+    - harcanan_butce = 0 AND gunluk_butce > 0 -> Campaign is ACTIVE but NOT SPENDING (TIKANMIŞ).
+    - harcanan_butce > 0 AND satis_adet = 0 -> Campaign is SPENDING but NO SALES (PERFORMANS DÜŞÜK).
 
   - |
     If the SQL query returns no rows, respond that no data
-    was found for the given criteria.
+    was found for the given criteria. Ensure responses are in TURKISH.

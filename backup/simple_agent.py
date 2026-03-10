@@ -1,143 +1,157 @@
-import asyncio
-import os
-import json
-import yaml
-import sys
-from datetime import datetime
-from contextlib import AsyncExitStack
-from dotenv import load_dotenv
-from google import genai
-from google.genai import types
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
+import asyncio # Bilgisayarın aynı anda birden fazla iş yapmasını sağlayan kütüphane
+import os      # Dosya yolları ve sistem ayarlarıyla konuşmak için
+import json    # Ayar dosyalarını (json) okumak için
+import yaml    # Veritabanı şemasını (yaml) okumak için
+import sys     # Sistemle ilgili temel işler için
+from datetime import datetime # Şu anki tarih ve saati öğrenmek için
+from contextlib import AsyncExitStack # Bağlantıları düzgünce kapatmak için yardımcı
+from dotenv import load_dotenv # .env dosyasındaki şifreleri yüklemek için
+from google import genai # Google'ın yapay zekasıyla (Gemini) konuşmak için
+from google.genai import types # Gemini'ye ne göndereceğimizi belirlemek için
+from mcp import ClientSession, StdioServerParameters # MCP (Veritabanı köprüsü) ayarları
+from mcp.client.stdio import stdio_client # Veritabanıyla mesajlaşmak için kapı açar
 
-# 1. SETUP ENVIRONMENT
-root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(root_dir, ".env"))
+# 1. AYARLARI YÜKLE
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Projenin ana klasörünü bul
+load_dotenv(os.path.join(root_dir, ".env")) # Şifreleri (API Key) yükle
 
-# Constants
+# Dosya yollarını belirle (Hangi dosya nerede?)
 MCP_CONFIG_PATH = os.path.join(root_dir, "mcp_config.json")
 SCHEMA_PATH = os.path.join(root_dir, "langgraph_system", "knowledge", "database_schema.yaml")
 
 def load_schema():
-    """Loads the database schema for the system prompt."""
+    """Yapay zekaya veritabanının yapısını anlatmak için dosyayı okur."""
     if not os.path.exists(SCHEMA_PATH):
-        return "Schema not found."
+        return "Şema dosyası bulunamadı."
     with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
+        # YAML dosyasını oku ve metin haline getir
         return yaml.dump(yaml.safe_load(f), allow_unicode=True)
 
 async def main():
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚀 Simple Agent Starting...")
+    """Ana program burada başlar."""
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚀 Bot uyanıyor...")
     
-    # 2. GEMINI CLIENT (DIRECT)
-    api_key = os.getenv("GOOGLE_API_KEY")
+    # 2. GEMINI'YI HAZIRLA
+    api_key = os.getenv("GOOGLE_API_KEY") # Şifreni al
     # Using gemini-1.5-flash for higher rate limits than 2.0-flash-lite
-    model_id = "gemini-2.5-flash"
-    client = genai.Client(api_key=api_key)
+    model_id = "gemini-2.5-flash" # Hangi robotla konuşacağımızı seç (En yenisi)
+    client = genai.Client(api_key=api_key) # Yapay zeka bağlantısını kur
     
-    # 3. MCP CONNECTION (ONLY POSTGRES/DATABASE)
-    exit_stack = AsyncExitStack()
+    # 3. VERİTABANI BAĞLANTISINI KUR
+    exit_stack = AsyncExitStack() # Hata olursa her şeyi güvenle kapatmak için
     
     if not os.path.exists(MCP_CONFIG_PATH):
-        print("Error: mcp_config.json missing.")
+        print("Hata: mcp_config.json dosyası yok.")
         return
 
     with open(MCP_CONFIG_PATH, "r") as f:
-        mcp_config = json.load(f)
+        mcp_config = json.load(f) # Ayarları oku
     
-    # Connect to first postgresql server found
+    # Veritabanı sunucusunu bulmaya çalış
     db_session = None
     for name, cfg in mcp_config.get("mcpServers", {}).items():
         if "postgres" in name.lower() or "sql" in name.lower():
+            # Veritabanına nasıl bağlanacağımızı söyleyen ayarlar
             params = StdioServerParameters(
                 command=cfg["command"],
                 args=cfg["args"],
                 env=os.environ.copy()
             )
+            # Kapıyı aç ve içeri gir
             read, write = await exit_stack.enter_async_context(stdio_client(params))
             db_session = await exit_stack.enter_async_context(ClientSession(read, write))
-            await db_session.initialize()
-            print(f"✅ Connected to Database: {name}")
+            await db_session.initialize() # Bağlantıyı başlat
+            print(f"✅ Veritabanına bağlandım: {name}")
             break
     
     if not db_session:
-        print("❌ No database server found in mcp_config.json")
+        print("❌ Veritabanı sunucusu bulunamadı!")
         return
 
-    schema_context = load_schema()
-    chat_history = []
+    chat_history = [] # Konuşmaları aklımızda tutmak için boş bir liste
 
-    print(f"[{datetime.now().strftime('%H:%M:%S')}] Ready. Type 'q' to exit.")
+    print(f"[{datetime.now().strftime('%H:%M:%S')}] Hazırım! Çıkmak için 'q' yaz.")
 
     try:
-        while True:
-            query = input("\n👤 Question: ").strip()
-            if query.lower() in ['q', 'exit', 'quit']: break
-            if not query: continue
+        while True: # Sen 'q' diyene kadar döngü devam eder
+            query = input("\n👤 Soru Sor: ").strip() # Senden bir cümle bekler
+            if query.lower() in ['q', 'exit', 'quit']: break # 'q' dersen kapatır
+            if not query: continue # Boş basarsan bir şey yapmaz
 
-            # STEP 2 & 3: Ask Gemini how to solve it (Directly ask for SQL)
-            # We always send the schema and instruct it to use the 'query' tool or just write the SQL.
-            step1_prompt = f"""You are a SQL expert. Based on the user question and the database schema below, write the CORRECT SQL query to answer it.
-            
-SCHEMA:
-{schema_context}
+            # ADIM 1: Gemini'ye soruyu verip ondan SQL kodu istiyoruz
+            step1_prompt = f"""Sen Reklam Optimizasyon Botu'nun 'Hafif ve Doğrudan' versiyonusun.
+SADECE Google Gemini zekasını ve MCP araçlarını kullanırsın. Başka bir katman yoktur.
 
-IMPORTANT: 
-- Return ONLY the SQL query.
-- Use aggregation (SUM) where appropriate.
-- Today is {datetime.now().strftime('%Y-%m-%d')}.
+VERİTABANI KURALLARI VE YAPISI:
+{load_schema()}
+
+BUGÜNÜN TARİHİ: {datetime.now().strftime('%Y-%m-%d')}
 
 USER QUESTION: {query}
 """
-            print("⏳ Generating SQL...")
+            print("⏳ Yapay zeka SQL yazıyor...")
             response1 = client.models.generate_content(model=model_id, contents=step1_prompt)
-            sql_query = response1.text.strip().replace("```sql", "").replace("```", "").strip()
             
-            # STEP 5: Log SQL
-            print(f"💾 SQL TO RUN:\n{sql_query}")
+            # Gemini'den gelen cevaptan SQL kodunu ayıkla
+            sql_query = response1.text.strip()
+            # If it contains code blocks, extract it
+            if "```sql" in sql_query: # Kod bloklarının arasını al
+                sql_query = sql_query.split("```sql")[1].split("```")[0].strip()
+            elif "```" in sql_query:
+                sql_query = sql_query.split("```")[1].split("```")[0].strip()
+            
+            # İçinde SELECT kelimesi geçen kısmı bul, gerisini at
+            if "SELECT" in sql_query.upper() and not sql_query.upper().startswith("SELECT"):
+                start_index = sql_query.upper().find("SELECT")
+                sql_query = sql_query[start_index:].strip()
+                
+            print(f"💾 ÇALIŞACAK SQL:\n{sql_query}")
 
-            # STEP 6: Execute SQL
-            db_result = "No results found."
+            # ADIM 2: SQL kodunu veritabanına gönderip sonuçları getiriyoruz
+            db_result = "Veri bulunamadı."
             try:
+                # Veritabanında sorguyu çalıştır
                 # We assume the tool name is 'query' as per standard postgres mcp
                 res = await db_session.call_tool("query", arguments={"sql": sql_query})
                 if res.content:
-                    db_result = res.content[0].text
+                    db_result = res.content[0].text # Sonucu al
                 
-                # LOG RESULT TO TERMINAL
-                print(f"📊 SQL RESULT:\n{db_result}")
+                # Terminale ham sonucu bas
+                print(f"📊 VERİTABANI SONUCU:\n{db_result}")
             except Exception as e:
-                db_result = f"SQL Execution Error: {e}"
-                print(f"❌ SQL ERROR: {e}")
+                db_result = f"Sorgu çalışırken hata oldu: {e}"
+                print(f"❌ SQL HATASI: {e}")
             
-            # STEP 6 (cont): Final Answer
-            final_prompt = f"""User asked: {query}
+            # ADIM 3: Gelen veriyi Gemini'ye verip insanca bir cevap yazdırıyoruz
+            final_prompt = f"""Kullanıcı şunu sordu: {query}
             
-Based on the following data retrieved from the database, please provide a clear and concise answer in Turkish.
+KRİTİK MANTIK ÖZETİ:
+1. Veritabanında her gün için birden fazla "snapshot" (kümülatif veri) bulunur. 
+2. Toplam hesaplanırken önce her gün için MAX değeri alınmış, sonra toplanmıştır.
+3. "Bugün" verisi DB'de dünün tarihiyle görünebilir (En güncel tarih baz alınır).
+4. 'reklam_cirosu' genel cirodur, 'net_satis' ise sadece o ürünün doğrudan satışıdır.
 
-DATABASE RESULT:
-{db_result}
+Sistemin çalıştırdığı SQL: {sql_query}
+Veritabanı Sonucu: {db_result}
 
-CHAT HISTORY:
-{chat_history[-5:] if chat_history else "None"}
-
-Ensure your answer is friendly and does not show technical details.
+Lütfen bu bilgilere göre uzman bir reklamcı gibi samimi ve Türkçe bir cevap yaz.
 """
-            print("🧠 Thinking about result...")
+            print("🧠 Cevap hazırlanıyor...")
             response2 = client.models.generate_content(model=model_id, contents=final_prompt)
             final_answer = response2.text
             
-            # STEP 7: Report back
+            # Cevabı ekrana bas
             print(f"\n🤖 Bot: {final_answer}")
             
-            # Save history
+            # Konuşmayı hafızaya kaydet
             chat_history.append({"user": query, "sql": sql_query, "bot": final_answer})
 
     except Exception as e:
-        print(f"❌ Error: {e}")
+        print(f"❌ Bir hata oluştu: {e}")
     finally:
+        # Bağlantıları düzgünce kapat
         await exit_stack.aclose()
-        print("Connections closed.")
+        print("Güle güle!")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    asyncio.run(main()) # Programı başlat

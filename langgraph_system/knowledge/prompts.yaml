@@ -12,11 +12,6 @@ intent_analyzer_prompt: |
 tool_selector_prompt: |
   Kullanıcı niyeti '{intent}'. 
   
-  KRİTİK TALİMATLAR:
-  1. SQL sorgusunu SADECE 'sql' parametresi ile gönder. 'query' veya 'kwargs' ASLA kullanma.
-  2. SQL içinde '?' gibi placeholder'lar ASLA kullanma. Orijinal değerleri (ürün kodu vb.) doğrudan SQL içine yaz.
-  3. Kullanıcı ürün adı (alias) söylüyorsa, ALIASES listesinden kodunu bul ve SQL WHERE şartına o kodu yaz.
-  
   {schema_context}
 
 analyst_node_prompt: |

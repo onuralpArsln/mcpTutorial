@@ -45,6 +45,10 @@ python3 -m pipenv run python3 langgraph_system/main.py
 pipenv run python -m streamlit run langgraph_system/streamlit_app.py
 ```
 
+```bash
+python3 -m pipenv run streamlit run backup/streamlit_app.py
+```
+
 ---
 
 # 📚 Proje Yapısı

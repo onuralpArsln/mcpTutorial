@@ -57,7 +57,6 @@ def load_schema_context() -> str:
         context += "\nTABLO: product_report\n"
         # Only technical column names to avoid confusing 3B models with descriptions
         context += "KOLONLAR (SADECE BUNLARI KULLAN): id, sorgu_tarihi, urun_kodu, harcanan_butce, gosterim_sayisi, tiklanma_sayisi, reklam_cirosu, harcama_getirisi, gerceklesen_tbm, tbm_teklif, onerilen_tbm, satis_adet, net_satis, created_at, gunluk_butce\n"
-        context += "HINT: ROAS = harcama_getirisi, Reklam Maliyeti = harcanan_butce\n"
                     
         if "sql_rules" in data:
             context += "\nRULES:\n"
