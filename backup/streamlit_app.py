@@ -21,10 +21,10 @@ MCP_CONFIG_PATH = os.path.join(root_dir, "mcp_config.json")
 SCHEMA_PATH = os.path.join(root_dir, "langgraph_system", "knowledge", "database_schema.yaml")
 
 # Sayfanın başlığını ve ikonunu ayarla
-st.set_page_config(page_title="ROB Yedek Ekran", page_icon="🛡️", layout="centered")
+st.set_page_config(page_title="ROB-GEMINICharged", page_icon="⚡", layout="centered")
 
-st.title("🛡️ Reklam Botu (Yedek Ekran)")
-st.markdown("Bu ekran direkt Gemini ve Veritabanına bağlıdır, çok hızlı çalışır.")
+st.title("⚡ Reklam Botu PRO 2.5")
+st.markdown("Arka plan gemini ve çok hızlı ayrıca her mesaj maliyeti sadece 0.4 cent")
 
 # Yazarken "/" koyunca çıkacak ürün kodları listesi
 PRODUCT_CODES = [
@@ -138,11 +138,11 @@ if prompt := st.chat_input(chat_placeholder):
             # ADIM 1: Gemini'den SQL kodu istiyoruz
             st.write("📝 SQL Sorgusu oluşturuluyor...")
             step1_prompt = f"""Sen Reklam Botusun. SADECE SQL kodu yaz. Açıklama yapma.
-VERİTABANI ŞEMASI:
-{schema_context}
-BUGÜN: {datetime.now().strftime('%Y-%m-%d')}
-SORU: {prompt}
-"""
+            VERİTABANI ŞEMASI:
+            {schema_context}
+            BUGÜN: {datetime.now().strftime('%Y-%m-%d')}
+            SORU: {prompt}
+            """
             response1 = client.models.generate_content(model=model_id, contents=step1_prompt)
             
             # SQL kodunu temizle (Sağındaki solundaki fazlalıkları at)
@@ -180,18 +180,18 @@ SORU: {prompt}
             history_text = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[-5:]])
             final_prompt = f"""Kullanıcı sorusu: {prompt}
 
-KRİTİK MANTIK ÖZETİ:
-1. Veritabanında her gün için birden fazla "snapshot" (kümülatif veri) bulunur. 
-2. Toplam hesaplanırken önce her gün için MAX değeri alınmış, sonra toplanmıştır.
-3. "Bugün" verisi DB'de dünün tarihiyle görünebilir (En güncel tarih baz alınır).
-4. 'reklam_cirosu' genel cirodur, 'net_satis' ise sadece o ürünün doğrudan satışıdır.
+            KRİTİK MANTIK ÖZETİ:
+            1. Veritabanında her gün için birden fazla "snapshot" (kümülatif veri) bulunur. 
+            2. Toplam hesaplanırken önce her gün için MAX değeri alınmış, sonra toplanmıştır.
+            3. "Bugün" verisi DB'de dünün tarihiyle görünebilir (En güncel tarih baz alınır).
+            4. 'reklam_cirosu' genel cirodur, 'net_satis' ise sadece o ürünün doğrudan satışıdır.
 
-Çalıştırılan SQL Sorgusu: {sql_query}
-Veritabanından Gelen Ham Veri: {db_result}
-Geçmiş: {history_text}
+            Çalıştırılan SQL Sorgusu: {sql_query}
+            Veritabanından Gelen Ham Veri: {db_result}
+            Geçmiş: {history_text}
 
-Lütfen bu bilgilere göre uzman bir reklamcı gibi Türkçe ve samimi bir cevap yaz.
-"""
+            Lütfen bu bilgilere göre uzman bir reklamcı gibi Türkçe ve samimi bir cevap yaz.
+            """
             
             response2 = client.models.generate_content(model=model_id, contents=final_prompt)
             final_answer = response2.text

@@ -80,15 +80,15 @@ async def main():
 
             # ADIM 1: Gemini'ye soruyu verip ondan SQL kodu istiyoruz
             step1_prompt = f"""Sen Reklam Optimizasyon Botu'nun 'Hafif ve Doğrudan' versiyonusun.
-SADECE Google Gemini zekasını ve MCP araçlarını kullanırsın. Başka bir katman yoktur.
+            SADECE Google Gemini zekasını ve MCP araçlarını kullanırsın. Başka bir katman yoktur.
 
-VERİTABANI KURALLARI VE YAPISI:
-{load_schema()}
+            VERİTABANI KURALLARI VE YAPISI:
+            {load_schema()}
 
-BUGÜNÜN TARİHİ: {datetime.now().strftime('%Y-%m-%d')}
+            BUGÜNÜN TARİHİ: {datetime.now().strftime('%Y-%m-%d')}
 
-USER QUESTION: {query}
-"""
+            USER QUESTION: {query}
+            """
             print("⏳ Yapay zeka SQL yazıyor...")
             response1 = client.models.generate_content(model=model_id, contents=step1_prompt)
             
@@ -124,18 +124,18 @@ USER QUESTION: {query}
             
             # ADIM 3: Gelen veriyi Gemini'ye verip insanca bir cevap yazdırıyoruz
             final_prompt = f"""Kullanıcı şunu sordu: {query}
-            
-KRİTİK MANTIK ÖZETİ:
-1. Veritabanında her gün için birden fazla "snapshot" (kümülatif veri) bulunur. 
-2. Toplam hesaplanırken önce her gün için MAX değeri alınmış, sonra toplanmıştır.
-3. "Bugün" verisi DB'de dünün tarihiyle görünebilir (En güncel tarih baz alınır).
-4. 'reklam_cirosu' genel cirodur, 'net_satis' ise sadece o ürünün doğrudan satışıdır.
+                        
+            KRİTİK MANTIK ÖZETİ:
+            1. Veritabanında her gün için birden fazla "snapshot" (kümülatif veri) bulunur. 
+            2. Toplam hesaplanırken önce her gün için MAX değeri alınmış, sonra toplanmıştır.
+            3. "Bugün" verisi DB'de dünün tarihiyle görünebilir (En güncel tarih baz alınır).
+            4. 'reklam_cirosu' genel cirodur, 'net_satis' ise sadece o ürünün doğrudan satışıdır.
 
-Sistemin çalıştırdığı SQL: {sql_query}
-Veritabanı Sonucu: {db_result}
+            Sistemin çalıştırdığı SQL: {sql_query}
+            Veritabanı Sonucu: {db_result}
 
-Lütfen bu bilgilere göre uzman bir reklamcı gibi samimi ve Türkçe bir cevap yaz.
-"""
+            Lütfen bu bilgilere göre uzman bir reklamcı gibi samimi ve Türkçe bir cevap yaz.
+            """
             print("🧠 Cevap hazırlanıyor...")
             response2 = client.models.generate_content(model=model_id, contents=final_prompt)
             final_answer = response2.text
