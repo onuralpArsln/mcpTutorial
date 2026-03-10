@@ -1,4 +1,5 @@
 import streamlit as st
+from textcomplete import textcomplete, StrategyProps
 import asyncio
 from langchain_core.messages import HumanMessage, AIMessage
 
@@ -9,6 +10,24 @@ st.set_page_config(page_title="ROB", page_icon="📈", layout="centered")
 
 st.title("Reklam Optimizsayon Botu")
 st.markdown("Ask me to analyze your campaigns, look directly at product costs, or optimize performance.")
+
+# Product codes for auto-complete
+PRODUCT_CODES = [
+    "XPUFFY4040KAREPUF", "XPET4545KEDIYUVA", "XKATYAT14DENYE", "XOZELURTMMNDR",
+    "XPETBIS6055BOND28", "TYCB55ED7921F34205", "XSANDMIN60120BISDENY",
+    "XPETMERD4DENYE", "XPETMERD4DENYE", "XPETPATIMINSUNSET", "XSANDMIN4514BISDENY",
+    "XSANDMIN08OVALDEN6", "XSANDMIN04DENY6"
+]
+
+# Auto-complete strategy for product codes (triggered by /)
+# Auto-complete strategy for product codes (triggered by /)
+product_strategy = StrategyProps(
+    id="productCodes",
+    match=r"\B/(\w*)$",
+    template="""(product) => `📦 ${product.name}`""",
+    replace="""(product) => `${product.name}`""",
+    data=[{"name": code} for code in PRODUCT_CODES],
+)
 
 # Initialize chat history
 if "messages" not in st.session_state:
@@ -43,7 +62,19 @@ for msg in st.session_state.messages:
         st.markdown(msg.content)
 
 # React to user input
-if prompt := st.chat_input("Hangi kampanyaya bakayım?"):
+chat_placeholder = "Hangi kampanyaya bakayım?"
+
+# Enable auto-complete for the chat input (rendered before or after, but placing before for priority)
+textcomplete(
+    area_label=chat_placeholder,
+    strategies=[product_strategy],
+    max_count=10,
+    stop_enter_propagation=True,
+    placement="bottom",
+
+)
+
+if prompt := st.chat_input(chat_placeholder):
     # Display user message in chat message container
     st.chat_message("user").markdown(prompt)
     # Add user message to session memory

@@ -1,33 +1,94 @@
 tables:
   product_report:
-    description: Ürünler ile ilgili tıklanma sayısı, görüntü, roas, reklam maliyeti gibi  detaylı bilgi tablosu.
+    description: |
+      This table contains advertising and sales performance data for products.
+      It is a time-series report table, meaning the same product can appear in
+      multiple rows across different dates.
+
+      When answering analytical questions (totals, performance, etc.), the model
+      should use aggregation functions such as SUM().
+
     columns:
-    - 'id: veritabanı id'
-    - 'sorgu_tarihi: toplanan verinin tarihi (YYYY-MM-DD)'
-    - 'sorgu_saati: sorgunun yapıldığı saat'
-    - 'urun_kodu: ürün kodu (örn. XPUFFY4040KAREPUF)'
-    - 'harcanan_butce: harcanan bütçe'
-    - 'gosterim_sayisi: gösterim'
-    - 'tiklanma_sayisi: tıklanma'
-    - 'reklam_cirosu: reklamdan gelen ciro'
-    - 'harcama_getirisi: ROAS reklam cirosunun harcan büteçeye orandırı (Eğer 0 ise hiç satış
-      gelmemiştir)'
-    - 'gerceklesen_tbm: tıklama başına maliyet'
-    - 'tbm_teklif: manuel verilen teklif'
-    - 'onerilen_tbm: pazar yerinin bize önerisi'
-    - 'satis_adet: ürün satış adedi'
-    - 'net_satis: ürün satışının net gelir'
-    - 'created_at: kayıt zamanı'
-    - 'gunluk_butce: reklam için günlük bütçe limiti'
+      - "id: database row id. The highest id represents the newest record."
+      - "sorgu_tarihi: date when the data was collected (YYYY-MM-DD)"
+      - "sorgu_saati: time when the query was executed"
+      - "urun_kodu: product code (example: XPUFFY4040KAREPUF)"
+      - "harcanan_butce: advertising budget spent"
+      - "gosterim_sayisi: number of ad impressions"
+      - "tiklanma_sayisi: number of ad clicks"
+      - "reklam_cirosu: revenue generated from ads"
+      - "harcama_getirisi: ROAS value (reklam_cirosu / harcanan_butce)"
+      - "gerceklesen_tbm: actual cost per click"
+      - "tbm_teklif: manually given CPC bid"
+      - "onerilen_tbm: marketplace recommended CPC bid"
+      - "satis_adet: number of units sold"
+      - "net_satis: net revenue from product sales"
+      - "created_at: record creation timestamp"
+      - "gunluk_butce: daily advertising budget limit"
+
 sql_rules:
-- Daima çok fazla veri dönmesini engellemek için tüm SQL sorgularının sonuna 'LIMIT 30' ekle.
-- Eğer tek bir değer soruluyor ise, sadece en güncel / en yeni / en büyük / en düşük veriye ulaşmak için 'LIMIT 1' kullan.
-- En yeni veriye ulaşmak için "ORDER BY id DESC" ekleyerek koşula uygun en yeni entry al.
-- EN düşük / yüksek <x> değerine ulaşmak için "ORDER BY <x> ASC/DESC" formatını ekle
-- Eğer kullanıcı bir ürünün kısa veya takma ismini söylüyorsa, aşağıdaki 'product_aliases' listesine bakarak onu mutlaka orijinal 'urun_kodu'na çevirip WHERE şartına ekle.
-- Sistemde ayrı bir 'ürünler' tablosu yoktur. Eğer kullanıcı 'neler satıyoruz', 'ürün listesi' gibi genel bir soru sorarsa, 'product_report' tablosundaki 'urun_kodu' kolonundan 'DISTINCT' (benzersiz) değerleri çekerek mevcut ürünleri listele.
-- Hangi ürünümüz ne kadar sattı gibi sorularda 'product_report' tablosunu kullan.
-product_aliases:
-  XPUFFY4040KAREPUF: kare puf
-  ZAYNABED160X200: zayna yatagi
-  XPUFFY6060KAREPUF: kırmızı puf
+
+  - |
+    The table product_report is a time-series report table.
+    The same product may appear multiple times across different dates.
+
+  - |
+    If the user asks for totals such as total sales, total revenue,
+    or total advertising spend, use aggregation functions like SUM().
+
+  - |
+    ROAS should not be calculated using average values.
+    The correct calculation is:
+    ROAS = SUM(reklam_cirosu) / SUM(harcanan_butce)
+
+  - |
+    If the user asks for the latest or most recent value,
+    use ORDER BY id DESC LIMIT 1.
+
+  - |
+    If the user asks for the highest or lowest value of a metric,
+    use ORDER BY <column> DESC or ASC with LIMIT 1.
+
+  - |
+    When searching for a specific product mentioned by the user,
+    use case-insensitive matching on the urun_kodu column using ILIKE.
+
+  - |
+    Do not search the entire user sentence with LIKE.
+    Extract meaningful keywords (for example: puf, yatak, sandalye)
+    and use them in separate ILIKE conditions.
+
+  - |
+    Example product search patterns:
+
+    WHERE urun_kodu ILIKE '%PUF%'
+
+    or
+
+    WHERE urun_kodu ILIKE '%PUF%' AND urun_kodu ILIKE '%KARE%'
+
+  - |
+    If the user asks for a list of products (for example:
+    "what products do we sell" or "product list"),
+    return DISTINCT values from the urun_kodu column.
+
+  - |
+    For listing queries, add LIMIT 30 to prevent returning too many rows.
+
+  - |
+    Do not use LIMIT for aggregation queries.
+
+  - |
+    If the user asks about time periods or dates,
+    use the sorgu_tarihi column.
+
+  - |
+    Date examples:
+
+    today → sorgu_tarihi = CURRENT_DATE
+    yesterday → sorgu_tarihi = CURRENT_DATE - INTERVAL '1 day'
+    last 7 days → sorgu_tarihi >= CURRENT_DATE - INTERVAL '7 day'
+
+  - |
+    If the SQL query returns no rows, respond that no data
+    was found for the given criteria.
