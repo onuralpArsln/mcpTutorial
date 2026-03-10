@@ -183,20 +183,46 @@ flowchart LR
     D -.-> D1["analysis_result &\nviolates_rules"]:::subCategory
 ```
 
-### İş Akışı Rotaları (Workflow Tracks)
-
-LangGraph mimarisindeki **Node (Düğüm)** rotaları 3 ana iş akışına bölünmüştür:
-
-1. **Fast-Track (Hızlı Rota):** (`Intent Router -> Tool Selector -> Explainer Node`)
-   - Yalnızca veri çekme ve özetleme işlemleri içindir (Örn: "Hangi puf modellerimiz var?"). Matematiksel analiz gerektirmez, doğrudan veritabanından cevap döner.
-2. **Deep-Track (Derin Analiz):** (`Intent Router -> Tool Selector -> Analyst Node -> Explainer Node`)
-   - Veri çekildikten sonra matematiksel işlem, ROAS kıyaslaması, anormallik tespiti (outlier) veya zarar saptırma analizleri gerektiren sorular içindir. `Analyst` düğümü ML ve LLM özelliklerini birleştirir.
-3. **Orchestration (Tahmin ve Senaryo):** (`Intent Router -> Tool Selector -> Analyst Node -> Explainer Node`)
-   - Bütçe simülasyonları, zaman serisi/trend analizleri veya farklı DB'lerden (Cross-DB) gelen verilerin birleştirilmesini (Memory Join) gerektiren en karmaşık iş akışıdır.
-
-*(Not: Bu sistem yalnızca okuma, analiz ve tavsiye yapar "Read-Only/Advisor". Veritabanına doğrudan yazma eylemi (Write/Action) yoktur).*
-
 ---
+
+# 🧩 Düğüm (Node) Detayları ve Mimari
+
+Sistem, LangGraph üzerinde koşan 5 ana işlem düğümünden oluşur. Her düğüm, `.env` dosyasındaki "Cheap" veya "Expensive" slotlarına dinamik olarak bağlanır.
+
+| Düğüm Adı | Fonksiyon | Görevi | Model Tier | Girdi | Çıktı |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Intent Router** | `intent_analyzer` | Kullanıcı mesajını sınıflandırır. | `cheap` | `messages` | `intent` |
+| **Tool Selector** | `tool_selector` | Niyete göre doğru MCP araçlarını seçer. | `cheap` | `intent` | `tool_calls` |
+| **Tool Executor** | `tools` | MCP sunucularında kod/sorgu çalıştırır. | - | `tool_calls` | `raw_data` |
+| **Analyst Mode** | `analyst_node` | Veriyi yorumlar ve kural kontrolü yapar. | `expensive` | `raw_data` | `analysis_result` |
+| **Explainer** | `explainer_node` | Kullanıcıya nihai yanıtı üretir. | `expensive` | `analysis_result` | `AIMessage` |
+
+## Detaylı Akış ve Araç Kullanımı
+
+### 1. Intent Router (`intent_analyzer`)
+- **İşlem:** Kullanıcının ne yapmak istediğini (Veri çekme, Tahmin, Analiz) saptar.
+- **Araçlar:** Araç kullanmaz, sadece kategori belirler.
+- **Nereye Gider:** Her zaman `tool_selection` düğümüne.
+
+### 2. Tool Selector (`tool_selection`)
+- **İşlem:** Belirlenen niyet için (`intents.yaml`) tanımlı olan araçları LLM'e bağlar. 
+- **Zeka:** Hangi parametrelerle (örn: hangi ürün kodu) hangi aracın çağrılacağına karar verir.
+- **Nereye Gider:** Araç çağrısı varsa `tools`, yoksa doğrudan `explainer`.
+
+### 3. Tool Executor (`tools`)
+- **İşlem:** `ToolNode` üzerinden MCP sunucularına bağlanır. 
+- **Otomatik Düzeltme:** 3B/Küçük modellerin yaptığı SQL hatalarını (örn: `ROAS` yerine `harcama_getirisi` yazmak) çalışma anında (`runtime`) düzeltir.
+- **Girdi Yazımı:** Araçlardan gelen ham JSON/Metin verisini `raw_data` alanına yazar.
+- **Nereye Gider:** Niyet "deep_track" ise `analyst`, değilse `explainer`.
+
+### 4. Analyst Mode (`analyst_node`)
+- **İşlem:** Çekilen veriyi matematiksel olarak inceler. ROAS 0 gibi kritik hataları `violates_rules` olarak işaretler.
+- **Girdi:** `raw_data` üzerinden beslenir.
+- **Zeka:** Yapılandırılmış çıktı (`Structured Output`) kullanarak kesin analiz notları üretir.
+
+### 5. Explainer (`explainer_node`)
+- **İşlem:** Analiz notlarını ve verileri birleştirerek kullanıcıya dostça bir dille sunar.
+- **Bellek:** Bir sonraki konuşma turu için `context_summary` oluşturur.
 
 ---
 
