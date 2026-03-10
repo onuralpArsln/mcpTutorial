@@ -1,5 +1,5 @@
 node_routing:
   intent_analyzer: "cheap"
-  tool_selector: "cheap"
-  analyst_node: "expensive"
-  explainer_node: "expensive"
+  tool_selector: "expensive"
+  analyst_node: "cheap"
+  explainer_node: "cheap"
