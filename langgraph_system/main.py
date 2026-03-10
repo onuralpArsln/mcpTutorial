@@ -7,9 +7,11 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_core.messages import HumanMessage, AIMessage
 
+import yaml
+
 from mcp_adapter import create_langchain_tools
 from graph import create_mcp_graph
-from llm_factory import get_llm
+from llm_factory import get_llm_by_role
 from intent_registry import IntentRegistry
 
 load_dotenv()
@@ -67,19 +69,39 @@ async def initialize_agent():
 
         print(f"\nTotal Unified Tools: {len(active_tools)}")
 
-        # 2. Model Setup
-        base_model = get_llm()
-        model_plain = base_model.with_retry(
-            stop_after_attempt=4,
-            wait_exponential_jitter=True
-        )
+        # 2. Dynamic Model Setup
+        routing_yaml_path = os.path.join(os.path.dirname(__file__), "knowledge", "routing_config.yaml")
+        routing_map = {}
+        if os.path.exists(routing_yaml_path):
+            with open(routing_yaml_path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f) or {}
+                routing_map = data.get("node_routing", {})
+        
+        # Determine which tiers we actually need to instantiate based on the yaml map + fallback
+        required_tiers = set(routing_map.values())
+        default_role = os.getenv("DEFAULT_LLM_ROLE", "cheap")
+        required_tiers.add(default_role)
+        
+        models_dict = {}
+        for tier in required_tiers:
+            try:
+                print(f"Initializing {tier} model...")
+                models_dict[tier] = get_llm_by_role(tier)
+            except Exception as me:
+                print(f"⚠️ Could not load model for tier '{tier}': {me}")
+        
+        # Ensure we have at least the default fallback
+        if not models_dict:
+            print(f"CRITICAL ERROR: No models could be loaded. Defaulting '{default_role}' to gemini.")
+            os.environ[f"{default_role.upper()}_LLM_PROVIDER"] = "gemini"
+            models_dict[default_role] = get_llm_by_role(default_role)
 
         # 3. Load Intent Registry
         registry = IntentRegistry()
         print(f"Loaded {len(registry.get_intent_names())} intents: {registry.get_intent_names()}")
 
-        # 4. Graph Creation
-        app = create_mcp_graph(base_model, model_plain, active_tools, registry)
+        # 4. Graph Creation (pass dict and map instead of flat models)
+        app = create_mcp_graph(models_dict, routing_map, active_tools, registry)
         
         return app, exit_stack
     

@@ -15,6 +15,10 @@ import os
 
 from intent_registry import IntentRegistry
 
+# Build centralized retry settings once per module load
+LLM_MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", 2))
+LLM_RETRY_WAIT_JITTER = os.getenv("LLM_RETRY_WAIT_JITTER", "true").lower() == "true"
+
 def _ts():
     """Returns current timestamp string for debug output."""
     return datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]
@@ -100,8 +104,8 @@ class AgentState(TypedDict):
     violates_rules: bool
 
 
-def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel, tools: list, registry: IntentRegistry):
-    """Creates an advanced LangGraph driven by the intent registry."""
+def create_mcp_graph(models_dict: dict, routing_map: dict, tools: list, registry: IntentRegistry):
+    """Creates an advanced LangGraph driven by the intent registry and dynamic model routing."""
 
     valid_intents = registry.get_intent_names()
     IntentChoice = type(
@@ -112,17 +116,24 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         }
     )
 
-    # Intent identification with structured output (for models that support it)
-    # However, for small models we'll provide a fallback in the node logic.
-    intent_model_structured = model_with_tools.with_structured_output(IntentChoice).with_retry(
-        stop_after_attempt=4,
-        wait_exponential_jitter=True
-    )
-
     # -------------------------------------------------------------------------
     # Node 1: Intent Router
     # -------------------------------------------------------------------------
     async def intent_analyzer(state: AgentState):
+        tier = routing_map.get("intent_analyzer", os.getenv("DEFAULT_LLM_ROLE", "cheap"))
+        selected_model = models_dict.get(tier, models_dict.get(os.getenv("DEFAULT_LLM_ROLE", "cheap")))
+        
+        # Apply structured output fallback / retry for the intent node
+        intent_model_structured = selected_model.with_structured_output(IntentChoice).with_retry(
+            stop_after_attempt=LLM_MAX_RETRIES,
+            wait_exponential_jitter=LLM_RETRY_WAIT_JITTER
+        )
+        
+        # plain fallback model for intent (using prompt-based categorization)
+        intent_model_plain = selected_model.with_retry(
+             stop_after_attempt=LLM_MAX_RETRIES,
+             wait_exponential_jitter=LLM_RETRY_WAIT_JITTER
+        )
         descriptions = registry.get_intent_descriptions()
         examples = registry.get_few_shot_examples()
 
@@ -138,7 +149,7 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         messages_for_intent = [SystemMessage(content=prompt)]
         if last_human_msg:
             messages_for_intent.append(last_human_msg)
-        response = await model_plain.ainvoke(messages_for_intent)
+        response = await intent_model_plain.ainvoke(messages_for_intent)
         _elapsed = time.time() - _t0
         print(f"[{_ts()}] DEBUG INTENT ◀ ainvoke tamamlandı | süre: {_elapsed:.2f}s")
 
@@ -175,9 +186,12 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         if not intent_tools:
             return {"messages": [AIMessage(content="")]}
 
-        focused_model = model_with_tools.bind_tools(intent_tools).with_retry(
-            stop_after_attempt=4,
-            wait_exponential_jitter=True
+        tier = routing_map.get("tool_selector", os.getenv("DEFAULT_LLM_ROLE", "cheap"))
+        selected_model = models_dict.get(tier, models_dict.get(os.getenv("DEFAULT_LLM_ROLE", "cheap")))
+
+        focused_model = selected_model.bind_tools(intent_tools).with_retry(
+            stop_after_attempt=LLM_MAX_RETRIES,
+            wait_exponential_jitter=LLM_RETRY_WAIT_JITTER
         )
 
         context_summary = state.get("context_summary", "")
@@ -291,12 +305,16 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         violates_rules: bool
 
     async def analyst_node(state: AgentState):
-        print(f"[{_ts()}] DEBUG ANALYST ▶ Analist devreye giriyor | raw_data boyutu: {len(state.get('raw_data', ''))} karakter")
-        # If model_plain is wrapped in RunnableRetry, we need its base to use structured output
-        base_llm = getattr(model_plain, "bound", model_plain)
+        tier = routing_map.get("analyst_node", "expensive")
+        selected_model = models_dict.get(tier, models_dict.get(os.getenv("DEFAULT_LLM_ROLE", "cheap")))
+        
+        print(f"[{_ts()}] DEBUG ANALYST ▶ Analist devreye giriyor | Seçilen model tier: {tier} | raw_data boyutu: {len(state.get('raw_data', ''))} karakter")
+        
+        base_llm = getattr(selected_model, "bound", selected_model)
         print(f"[{_ts()}] DEBUG ANALYST ▶ base_llm tipi: {type(base_llm).__name__}")
+        
         analyst_llm = base_llm.with_structured_output(AnalystOutput).with_retry(
-             stop_after_attempt=3, wait_exponential_jitter=True
+             stop_after_attempt=LLM_MAX_RETRIES, wait_exponential_jitter=LLM_RETRY_WAIT_JITTER
         )
 
         prompt = load_prompt("analyst_node_prompt", intent=state['intent'], raw_data=state['raw_data'])
@@ -343,9 +361,17 @@ def create_mcp_graph(model_with_tools: BaseChatModel, model_plain: BaseChatModel
         if last_human_msg:
              messages_for_llm.append(last_human_msg)
 
-        print(f"[{_ts()}] DEBUG EXPLAINER ▶ ainvoke başlıyor | prompt: {len(prompt)} karakter | mesaj sayısı: {len(messages_for_llm)} (önceki AI mesajı: {prev_ai_msg is not None})")
+        tier = routing_map.get("explainer_node", "expensive")
+        selected_model = models_dict.get(tier, models_dict.get(os.getenv("DEFAULT_LLM_ROLE", "cheap")))
+
+        print(f"[{_ts()}] DEBUG EXPLAINER ▶ ainvoke başlıyor | Seçilen model tier: {tier} | prompt: {len(prompt)} karakter | mesaj sayısı: {len(messages_for_llm)} (önceki AI mesajı: {prev_ai_msg is not None})")
+        
+        explainer_llm = selected_model.with_retry(
+            stop_after_attempt=LLM_MAX_RETRIES, wait_exponential_jitter=LLM_RETRY_WAIT_JITTER
+        )
+        
         _t0 = time.time()
-        response = await model_plain.ainvoke(messages_for_llm)
+        response = await explainer_llm.ainvoke(messages_for_llm)
         _elapsed = time.time() - _t0
         print(f"[{_ts()}] DEBUG EXPLAINER ◀ ainvoke tamamlandı | süre: {_elapsed:.2f}s")
         print(f"[{_ts()}] DEBUG EXPLAINER ◀ yanıt uzunluğu: {len(str(response.content))} karakter")

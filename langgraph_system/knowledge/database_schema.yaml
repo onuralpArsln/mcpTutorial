@@ -22,6 +22,8 @@ tables:
 sql_rules:
 - Daima çok fazla veri dönmesini engellemek için tüm SQL sorgularının sonuna 'LIMIT 30' ekle.
 - Eğer tek bir değer soruluyor ise, sadece en güncel / en yeni / en büyük / en düşük veriye ulaşmak için 'LIMIT 1' kullan.
+- En yeni veriye ulaşmak için "ORDER BY id DESC" ekleyerek koşula uygun en yeni entry al.
+- EN düşük / yüksek <x> değerine ulaşmak için "ORDER BY <x> ASC/DESC" formatını ekle
 - Eğer kullanıcı bir ürünün kısa veya takma ismini söylüyorsa, aşağıdaki 'product_aliases' listesine bakarak onu mutlaka orijinal 'urun_kodu'na çevirip WHERE şartına ekle.
 - Sistemde ayrı bir 'ürünler' tablosu yoktur. Eğer kullanıcı 'neler satıyoruz', 'ürün listesi' gibi genel bir soru sorarsa, 'product_report' tablosundaki 'urun_kodu' kolonundan 'DISTINCT' (benzersiz) değerleri çekerek mevcut ürünleri listele.
 - Hangi ürünümüz ne kadar sattı gibi sorularda 'product_report' tablosunu kullan.

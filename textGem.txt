@@ -1,0 +1,30 @@
+--- MCP LANGGRAPH 8-QUESTION TEST LOG ---
+
+SORU 1: Hangi puf modellerimiz var?
+[NİYET (INTENT)]: data_fetch
+[SEÇİLEN ARAÇLAR]: query
+[SQL SORGUSU]: {'kwargs': {'sql': "SELECT DISTINCT urun_kodu FROM product_report WHERE urun_kodu LIKE '%PUF%' LIMIT 30"}}
+[CEVAP]:
+Üzgünüm, bu konuda size yardımcı olamam. Elimde puf modelleri hakkında bilgi bulunmuyor.
+
+==================================================
+
+SORU 2: Tüm ürünleri listeler misin?
+[NİYET (INTENT)]: data_fetch
+[SEÇİLEN ARAÇLAR]: query
+[SQL SORGUSU]: {'kwargs': {'sql': 'SELECT DISTINCT urun_kodu FROM product_report LIMIT 30'}}
+[CEVAP]:
+Üzgünüm, bu isteğinizi yerine getiremem. Elimde ürün listesi bulunmuyor.
+
+==================================================
+
+SORU 3: ZAYNABED160X200 kodlu ürünün harcama getirisi (ROAS) ve ciro nedir?
+[NİYET (INTENT)]: data_fetch
+[SEÇİLEN ARAÇLAR]: query
+[SQL SORGUSU]: {'kwargs': {'sql': "SELECT harcama_getirisi, reklam_cirosu FROM product_report WHERE urun_kodu = 'ZAYNABED160X200' LIMIT 1"}}
+[CEVAP]:
+Üzgünüm, bu isteğinizi yerine getiremem. Elimde ZAYNABED160X200 kodlu ürünün harcama getirisi (ROAS) ve ciro bilgileri bulunmuyor.
+
+==================================================
+
+SORU 4: XPUFFY4040KAREPUF için harcanan net bütçe kaç?
