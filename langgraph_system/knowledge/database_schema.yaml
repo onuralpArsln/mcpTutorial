@@ -10,21 +10,21 @@ tables:
 
     columns:
       - "id: database row id. The highest id represents the newest record."
-      - "sorgu_tarihi: date when the data was collected (YYYY-MM-DD)"
-      - "sorgu_saati: time when the query was executed"
-      - "urun_kodu: product code (example: XPUFFY4040KAREPUF)"
-      - "harcanan_butce: advertising budget spent"
-      - "gosterim_sayisi: number of ad impressions"
-      - "tiklanma_sayisi: number of ad clicks"
-      - "reklam_cirosu: revenue generated from ads"
-      - "harcama_getirisi: ROAS value (reklam_cirosu / harcanan_butce)"
-      - "gerceklesen_tbm: actual cost per click"
-      - "tbm_teklif: manually given CPC bid"
-      - "onerilen_tbm: marketplace recommended CPC bid"
-      - "satis_adet: number of units sold"
-      - "net_satis: net revenue from product sales"
-      - "created_at: record creation timestamp"
-      - "gunluk_butce: daily advertising budget limit"
+      - "sorgu_tarihi: date when the data was collected (YYYY-MM-DD). Türkçe: tarih, gün."
+      - "sorgu_saati: time when the query was executed. Türkçe: saat."
+      - "urun_kodu: product code (example: XPUFFY4040KAREPUF). Türkçe: ürün kodu, model."
+      - "harcanan_butce: advertising budget spent. Türkçe: harcama, harcanan, maliyet, bütçe harcaması."
+      - "gosterim_sayisi: number of ad impressions. Türkçe: gösterim."
+      - "tiklanma_sayisi: number of ad clicks. Türkçe: tıklama."
+      - "reklam_cirosu: revenue generated from ads. Türkçe: ciro, reklam cirosu, satış geliri."
+      - "harcama_getirisi: ROAS value. Türkçe: ROAS, getiri, harcama getirisi. Note: For aggregate data, calculate manually."
+      - "gerceklesen_tbm: actual cost per click. Türkçe: TBM, tıklama başı maliyet."
+      - "tbm_teklif: manually given CPC bid. Türkçe: teklif, TBM teklifi."
+      - "onerilen_tbm: marketplace recommended CPC bid. Türkçe: önerilen TBM."
+      - "satis_adet: number of units sold. Türkçe: satış adedi, kaç adet sattı."
+      - "net_satis: net revenue from product sales. Türkçe: net satış, ürün cirosu."
+      - "created_at: record creation timestamp."
+      - "gunluk_butce: daily advertising budget limit. Türkçe: günlük bütçe."
 
 sql_rules:
 
@@ -34,12 +34,11 @@ sql_rules:
 
   - |
     If the user asks for totals such as total sales, total revenue,
-    or total advertising spend, use aggregation functions like SUM().
-
   - |
-    ROAS should not be calculated using average values.
-    The correct calculation is:
-    ROAS = SUM(reklam_cirosu) / SUM(harcanan_butce)
+    ROAS RULES:
+    1. If the user asks for "Current ROAS" or "ROAS of a specific product", simply use the 'harcama_getirisi' column.
+    2. Example: SELECT harcama_getirisi FROM product_report WHERE urun_kodu = '...' ORDER BY id DESC LIMIT 1
+    3. Use the aggregation formula [SUM(reklam_cirosu) / NULLIF(SUM(harcanan_butce), 0)] ONLY if the user specifically asks for "Average ROAS over time" or "Total ROAS for all products".
 
   - |
     If the user asks for the latest or most recent value,
