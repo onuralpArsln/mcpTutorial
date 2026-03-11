@@ -110,6 +110,9 @@ else:
 
         # Botun cevabını üret
         with st.chat_message("assistant"):
+            answer = ""
+            sql_query = None
+            
             with st.status("Düşünülüyor...", expanded=True) as status:
                 try:
                     loop = st.session_state.loop
@@ -129,9 +132,6 @@ else:
                     if sql_query.startswith("[DIRECT_ANSWER]"):
                         answer = sql_query.replace("[DIRECT_ANSWER]", "").strip()
                         status.update(label="Sohbet Yanıtı", state="complete", expanded=False)
-                        st.markdown(answer)
-                        st.session_state.messages.append({"role": "assistant", "content": answer})
-                        save_history(username, st.session_state.messages)
                     else:
                         st.code(sql_query, language="sql")
                         
@@ -153,16 +153,20 @@ else:
                         ))
                         
                         status.update(label="Tamamlandı!", state="complete", expanded=False)
-                        
-                        # Sonucu göster
-                        st.markdown(answer)
-                        st.session_state.messages.append({
-                            "role": "assistant", 
-                            "content": answer, 
-                            "sql": sql_query
-                        })
-                        save_history(username, st.session_state.messages) # Kaydet
                     
                 except Exception as e:
                     st.error(f"Hata oluştu: {e}")
                     status.update(label="Hata!", state="error")
+                    answer = "Üzgünüm, cevap üretilirken bir hata oluştu."
+
+            # Sonucu göster (Düşünme balonunun dışında!)
+            if answer:
+                st.markdown(answer)
+                
+                # Hafızaya al
+                msg_data = {"role": "assistant", "content": answer}
+                if sql_query and not sql_query.startswith("[DIRECT_ANSWER]"):
+                    msg_data["sql"] = sql_query
+                
+                st.session_state.messages.append(msg_data)
+                save_history(username, st.session_state.messages) # Kaydet
