@@ -5,10 +5,10 @@ from datetime import datetime
 from simple_agent import BackupAgent
 
 # Sayfanın başlığını ve ikonunu ayarla
-st.set_page_config(page_title="ROB-DeliDestiko", page_icon="💥🚀", layout="centered")
+st.set_page_config(page_title="ROB", page_icon="💥🚀", layout="centered")
 
 st.title("⚡ Reklam Analiz Yardımcısı")
-st.markdown("Gemini ile güçlendirildi! 🚀")
+st.markdown("Gemini ile çalışıyor! 🚀")
 
 
 # 1. OTURUM HAFIZASINI HAZIRLA (Session State)
@@ -28,7 +28,7 @@ def get_backup_agent():
     return agent
 
 # Agent'ı başlat
-with st.spinner("Motor ısınıyor..."):
+with st.spinner("Ajan Başlıyor..."):
     agent = get_backup_agent()
 
 # Eski mesajları ekrana çiz
