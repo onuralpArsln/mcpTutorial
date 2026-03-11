@@ -3,7 +3,7 @@ import asyncio
 import os
 import json
 from datetime import datetime
-from simple_agent import BackupAgent
+from gemini_agent import GeminiAgent
 
 # Sayfanın başlığını ve ikonunu ayarla
 st.set_page_config(page_title="ROB", page_icon="💥🚀", layout="centered")
@@ -71,16 +71,16 @@ if "loop" not in st.session_state:
     st.session_state.loop = asyncio.new_event_loop()
 
 @st.cache_resource
-def get_backup_agent():
-    """BackupAgent nesnesini bir kez oluşturup hafızada tutar."""
-    agent = BackupAgent()
+def get_gemini_agent():
+    """GeminiAgent nesnesini bir kez oluşturup hafızada tutar."""
+    agent = GeminiAgent()
     loop = st.session_state.loop
     loop.run_until_complete(agent.connect())
     return agent
 
 # Agent'ı başlat
 with st.spinner("Ajan Başlıyor..."):
-    agent = get_backup_agent()
+    agent = get_gemini_agent()
 
 # Eski mesajları ekrana çiz
 for msg in st.session_state.messages:

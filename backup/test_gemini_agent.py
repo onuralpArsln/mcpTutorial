@@ -3,11 +3,11 @@ import os
 import sys
 from datetime import datetime
 
-# Add the root directory to sys.path so we can import simple_agent
+# Add the root directory to sys.path so we can import gemini_agent
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, root_dir)
 
-from backup.simple_agent import BackupAgent
+from backup.gemini_agent import GeminiAgent
 
 # --- TEST QUESTIONS ---
 QUESTIONS = [
@@ -27,7 +27,7 @@ QUESTIONS = [
 
 async def run_backup_tests():
     print("🚀 Starting Contextual Backup Agent Test Suite...")
-    agent = BackupAgent()
+    agent = GeminiAgent()
     history = [] # Mesaj geçmişi burada tutulacak
     active_product = None # Odak ürün kilidi
     

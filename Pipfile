@@ -12,6 +12,7 @@ langchain-google-genai = "*"
 langchain-ollama = "*"
 pyyaml = "*"
 streamlit-textcomplete = "*"
+watchdog = "*"
 
 [dev-packages]
 

@@ -19,7 +19,7 @@ load_dotenv(os.path.join(root_dir, ".env"))
 MCP_CONFIG_PATH = os.path.join(root_dir, "mcp_config.json")
 SCHEMA_PATH = os.path.join(root_dir, "langgraph_system", "knowledge", "database_schema.yaml")
 
-class BackupAgent:
+class GeminiAgent:
     def __init__(self):
         self.api_key = os.getenv("GOOGLE_API_KEY")
         self.model_id = os.getenv("BACKUP_MODEL_ID", "gemini-2.5-flash-lite")
@@ -163,7 +163,7 @@ ODAK ÜRÜN (BAĞLAM): {active_product if active_product else 'Belirtilmedi (Ger
         await self.exit_stack.aclose()
 
 async def main():
-    agent = BackupAgent()
+    agent = GeminiAgent()
     print(f"[{datetime.now().strftime('%H:%M:%S')}] 🚀 CLI Bot uyanıyor...")
     
     if await agent.connect():

@@ -38,5 +38,27 @@
     "role": "assistant",
     "content": "Son 3 günde en çok satan ürünler şunlardır:\n* TYCB55ED7921F34205 (697 adet)\n* XPETMERD4DENYE (692 adet)\n* XOZELURTMMNDR (690 adet)",
     "sql": "SELECT\n  urun_kodu,\n  SUM(daily_sales) AS toplam_satis\nFROM (\n  SELECT\n    urun_kodu,\n    sorgu_tarihi,\n    MAX(satis_adet) AS daily_sales\n  FROM product_report\n  WHERE\n    sorgu_tarihi >= CURRENT_DATE - INTERVAL '3 days'\n  GROUP BY\n    urun_kodu,\n    sorgu_tarihi\n) AS daily_finals\nGROUP BY\n  urun_kodu\nORDER BY\n  toplam_satis DESC\nLIMIT 3;"
+  },
+  {
+    "role": "user",
+    "content": "pet grubunda neler var "
+  },
+  {
+    "role": "assistant",
+    "content": "Pet ürünleriniz şunlardır: XPETMERD4DENYE, XPETPATIMINSUNSET, XPET4545KEDIYUVA, XPETBIS6055BOND28.",
+    "sql": "SELECT DISTINCT urun_kodu\nFROM product_report\nWHERE urun_kodu ILIKE '%PET%'\nLIMIT 30;"
+  },
+  {
+    "role": "user",
+    "content": "son üç günde, günün hangi saat diliminde satış sayıları en yükse olmuş?"
+  },
+  {
+    "role": "user",
+    "content": "son üç günde, günün hangi saat diliminde satış sayıları en yükse olmuş?\n\n"
+  },
+  {
+    "role": "assistant",
+    "content": "Son üç günde, satışların en yoğun olduğu saat dilimi 21:40 olmuştur.",
+    "sql": "SELECT\n  sorgu_saati,\n  SUM(satis_adet) AS toplam_satis\nFROM (\n  SELECT\n    sorgu_saati,\n    MAX(satis_adet) AS satis_adet\n  FROM product_report\n  WHERE\n    sorgu_tarihi >= CURRENT_DATE - INTERVAL '3 days'\n  GROUP BY\n    sorgu_saati,\n    sorgu_tarihi\n) AS daily_sales_by_hour\nGROUP BY\n  sorgu_saati\nORDER BY\n  toplam_satis DESC\nLIMIT 1;"
   }
 ]
