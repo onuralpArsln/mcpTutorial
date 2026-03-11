@@ -38,7 +38,9 @@ sql_rules:
     SNAPSHOT AGGREGATION RULE (CRITICAL):
     This table contains multiple snapshots per day. Direct SUM() will cause OVER-COUNTING.
     To get accurate totals (spend, sales, revenue), ALWAYS use this subquery pattern:
-    SELECT SUM(daily_max) FROM (SELECT MAX(metric_name) as daily_max FROM product_report WHERE ... GROUP BY sorgu_tarihi, urun_kodu) as t
+    SELECT SUM(alias_name) FROM (SELECT MAX(column_name) as alias_name FROM product_report WHERE ... GROUP BY sorgu_tarihi, urun_kodu) as t
+    IMPORTANT: The outer query must aggregate (SUM/AVG) the SPECIFIC ALIAS defined in the subquery. 
+    Never use the original column name in the outer query's aggregation.
   - |
     ROAS RULES:
     1. If the user asks for "Current ROAS" or "ROAS of a specific product", simply use the 'harcama_getirisi' column.

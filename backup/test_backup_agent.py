@@ -17,7 +17,12 @@ questions = [
     "ZAYNABED160X200 ile MINIPUFROUND'u kıyasla, hangisinin ROAS'ı (harcama_getirisi) daha yüksek?",
     "XSANDMIN04DENY6'ün ROAS'ı nedir ve bu sayı 1'den büyük mü? (Matematik testi)",
     "Cebimde ekstra 500 TL var, sence hangi ürünlerin bütçesine paylaştırmalıyım?",
-    "XPUFFY için strateji kuralları nelerdir ve şu an uygulanan teklifle kıyaslandığında ne yapılmalı?"
+    "XPUFFY için strateji kuralları nelerdir ve şu an uygulanan teklifle kıyaslandığında ne yapılmalı?",
+    # --- TRICKY QUESTIONS ---
+    "Reklam getirisi (ROAS) en yüksek olan ilk 3 ürünü listele.",
+    "Bütçesi olmasına rağmen hiç harcama yapmayan (tıkanmış) ürünleri bul.",
+    "İçinde 'PUF' geçen ürünlerin toplam reklam cirosu nedir?",
+    "ZAYNABED160X200 ürünündeki net satış cirosu ile reklam cirosu arasındaki fark nedir?"
 ]
 
 async def run_backup_tests():

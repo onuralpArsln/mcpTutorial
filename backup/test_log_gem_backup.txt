@@ -1,33 +1,29 @@
---- BACKUP AGENT TEST LOG (2026-03-11 12:39:10) ---
+--- BACKUP AGENT TEST LOG (2026-03-11 13:16:34) ---
 Model ID: gemini-2.5-flash-lite
 
 QUESTION 1: Hangi puf modellerimiz var?
 [SQL SORGUSU]: SELECT DISTINCT urun_kodu
 FROM product_report
 WHERE urun_kodu ILIKE '%PUF%'
-LIMIT 30;
+LIMIT 30
 [DB SONUCU]: [
   {
     "urun_kodu": "XPUFFY4040KAREPUF"
   }
 ]
 [CEVAP]:
-Harika bir soru! Müşterilerimizin ilgisini çekecek birbirinden şık ve konforlu puf modellerimiz var.
+Selam! 👋
 
-SQL sorgumuzdan çıkan sonuçlara göre şu an için öne çıkan ve dikkat çeken bir modelimiz bulunuyor:
+Elimizde ne kadar harika puf modelimiz olduğunu görmek için bir sorgu çalıştırdım. Araştırmam sonucunda, şu anda size sunabileceğimiz tek ve benzersiz bir puf modelimiz olduğunu tespit ettim:
 
-*   **XPUFFY4040KAREPUF**: Bu model, adından da anlaşılacağı gibi kare formda ve oldukça kullanışlı bir tasarıma sahip. Detaylı bilgi ve görseller için ürünlerimizi incelemenizi tavsiye ederim.
+*   **XPUFFY4040KAREPUF**
 
-Şu anki elimizdeki veriler bu modeli işaret ediyor. Ancak unutmayın, stoklarımız ve ürün gamımız sürekli güncelleniyor. Belki de şu an gördüğünüz bu model, sizin için mükemmel olanıdır!
-
-Eğer aklınızda farklı bir puf modeli varsa veya bu model hakkında daha fazla detay isterseniz, lütfen çekinmeden sorun. Size yardımcı olmaktan mutluluk duyarım! 😊
+Bu modelin detaylarını ve diğer ürün seçeneklerimizi öğrenmek isterseniz, bana sormaktan çekinmeyin lütfen. Size en uygun ürünü bulmak için buradayım! 😊
 
 ==================================================
 
 QUESTION 2: Tüm ürünleri listeler misin?
-[SQL SORGUSU]: SELECT DISTINCT urun_kodu
-FROM product_report
-LIMIT 30;
+[SQL SORGUSU]: SELECT DISTINCT urun_kodu FROM product_report LIMIT 30
 [DB SONUCU]: [
   {
     "urun_kodu": "XPUFFY4040KAREPUF"
@@ -70,127 +66,125 @@ LIMIT 30;
   }
 ]
 [CEVAP]:
-Merhaba! Elbette, sizin için tüm ürünlerin kodlarını listeledim. İşte karşıma çıkanlar:
+Merhaba! Elbette, sana ürünlerimizi listeleyebilirim. Sistemimizden aldığım en güncel ürün kodlarına göre sana şöyle bir liste sunabilirim:
 
-* XPUFFY4040KAREPUF
-* XPET4545KEDIYUVA
-* XKATYAT14DENYE
-* XOZELURTMMNDR
-* XPETBIS6055BOND28
-* TYCB55ED7921F34205
-* XSANDMIN60120BISDENY
-* XPETMERD4DENYE
-* XPETPATIMINSUNSET
-* XSANDMIN4514BISDENY
-* XSANDMIN08OVALDEN6
-* Bilinmiyor
-* XSANDMIN04DENY6
+*   XPUFFY4040KAREPUF
+*   XPET4545KEDIYUVA
+*   XKATYAT14DENYE
+*   XOZELURTMMNDR
+*   XPETBIS6055BOND28
+*   TYCB55ED7921F34205
+*   XSANDMIN60120BISDENY
+*   XPETMERD4DENYE
+*   XPETPATIMINSUNSET
+*   XSANDMIN4514BISDENY
+*   XSANDMIN08OVALDEN6
+*   Bilinmiyor
+*   XSANDMIN04DENY6
 
-Umarım bu liste işinize yarar. Eğer bu ürünlerle ilgili daha detaylı bilgi almak isterseniz, örneğin satış rakamları veya reklam ciroları gibi, lütfen çekinmeden sorun. Size yardımcı olmaktan mutluluk duyarım! 😊
+Bu liste, şu anda sistemimizde kayıtlı olan ürünleri gösteriyor. "Bilinmiyor" olarak görünen ürün kodu ise sanırım bir gözden geçirme gerektiriyor, onu da en kısa sürede netleştirelim.
+
+Umarım bu liste işine yarar! Başka bir konuda yardımcı olabilir miyim?
 
 ==================================================
 
 QUESTION 3: XSANDMIN4514BISDENY kodlu ürünün harcama getirisi (ROAS) ve ciro nedir?
 [SQL SORGUSU]: SELECT
-    harcama_getirisi,
-    reklam_cirosu
-FROM
-    product_report
-WHERE
-    urun_kodu ILIKE '%XSANDMIN4514BISDENY%'
-ORDER BY
-    id DESC
-LIMIT 1;
+  SUM(t.harcama_getirisi) AS roas,
+  SUM(t.reklam_cirosu) AS ciro
+FROM (
+  SELECT
+    MAX(harcama_getirisi) AS harcama_getirisi,
+    MAX(reklam_cirosu) AS reklam_cirosu
+  FROM product_report
+  WHERE
+    urun_kodu = 'XSANDMIN4514BISDENY'
+  GROUP BY
+    sorgu_tarihi
+) AS t
 [DB SONUCU]: [
   {
-    "harcama_getirisi": "0.00",
-    "reklam_cirosu": "0.00"
+    "roas": "123.58",
+    "ciro": "339524.00"
   }
 ]
 [CEVAP]:
-Selamlar! XSANDMIN4514BISDENY kodlu ürününüzün harcama getirisi (ROAS) ve cirosu hakkında bilgi istemişsiniz. Hemen inceleyelim:
+Selamlar! XSANDMIN4514BISDENY kodlu ürünün performansına şöyle bir baktım.
 
-Veritabanından aldığımız son verilere göre, **XSANDMIN4514BISDENY** kodlu ürününüz için **harcama getirisi (ROAS) 0.00** ve **reklam cirosu 0.00** olarak görünüyor.
+Bu ürün için **harcama getirisi (ROAS)** tam olarak **123.58** olarak görünüyor. Bu, harcadığın her 1 TL'ye karşılık sana 123.58 TL geri kazandırdığı anlamına geliyor. Oldukça iyi bir oran diyebilirim!
 
-Bu durum, şu an için bu ürün özelinde reklam harcamalarından elde edilen bir getiri olmadığını veya reklam cirosu kısmında bir kayıt olmadığını gösteriyor.
+Ayrıca, bu ürünün **toplam cirosu** ise **339,524.00 TL** seviyesinde. Bu, ürünün pazarlama faaliyetleri sonucunda elde ettiği brüt geliri ifade ediyor.
 
-**Neden böyle görünüyor olabilir?**
+Bu rakamlar, XSANDMIN4514BISDENY kodlu ürünün reklam kampanyalarından gayet olumlu bir dönüş aldığını gösteriyor. Bu performansı sürdürmek veya daha da ileriye taşımak için harcamalarımızı ve stratejilerimizi bu doğrultuda şekillendirebiliriz.
 
-*   **Yeni Başlamış Bir Kampanya:** Eğer bu ürün için yakın zamanda bir reklam kampanyası başlattıysanız, sonuçların henüz sisteme yansıması biraz zaman alabilir.
-*   **Kampanya Performansı:** Mevcut reklam kampanyalarınızın bu ürüne odaklanan kısmının henüz yeterli satış getirmediği anlamına gelebilir.
-*   **Veri Güncelleme Gecikmesi:** Bazen verilerin sisteme tam olarak düşmesi birkaç günü bulabilir. "Bugün" bilgisinin dünle görünmesi de bunu destekliyor.
-
-**Ne Yapabiliriz?**
-
-1.  **Kampanya Odaklanması:** Eğer bu ürün sizin için önemliyse, reklam kampanyalarınızın bu ürüne daha fazla odaklanmasını sağlayabiliriz. Hedefleme, anahtar kelimeler ve reklam metinlerini gözden geçirmek faydalı olabilir.
-2.  **Daha Fazla Veri Beklemek:** Eğer kampanya yeni başladıysa, birkaç gün daha bekleyip verileri tekrar kontrol etmek en doğrusu olacaktır.
-3.  **İç Analiz:** Ürünün kendi web sitesindeki veya platformlardaki sayfasına gelen trafiğin satışa dönüşüp dönüşmediğini analiz etmek de fikir verebilir.
-
-Şimdilik durum bu şekilde görünüyor. Eğer bu ürünle ilgili daha fazla bilgi verirseniz veya kampanyalarınız hakkında detay paylaşırsanız, daha nokta atışı tavsiyelerde bulunabilirim.
-
-Kolay gelsin!
+Eğer bu rakamlar hakkında daha detaylı konuşmak veya sonraki adımlarımızı belirlemek istersen, her zaman buradayım!
 
 ==================================================
 
 QUESTION 4: XPUFFY4040KAREPUF için harcanan net bütçe kaç?
-[SQL SORGUSU]: SELECT SUM(harcanan_butce)
-FROM (
-  SELECT MAX(harcanan_butce) AS daily_max
-  FROM product_report
-  WHERE urun_kodu ILIKE '%XPUFFY4040KAREPUF%'
-  GROUP BY sorgu_tarihi
-) AS t
-[DB SONUCU]: SQL Hatası: column "harcanan_butce" does not exist
+[SQL SORGUSU]: SELECT SUM(t.harcanan_butce) FROM (SELECT MAX(harcanan_butce) as harcanan_butce FROM product_report WHERE urun_kodu ILIKE '%XPUFFY4040KAREPUF%' GROUP BY sorgu_tarihi, urun_kodu) as t
+[DB SONUCU]: [
+  {
+    "sum": "102425.60"
+  }
+]
 [CEVAP]:
-Merhaba!
+Harika bir soru! XPUFFY4040KAREPUF ürünümüz için harcanan net bütçeyi merak etmeniz çok doğal.
 
-XPUFFY4040KAREPUF için harcanan net bütçeyi öğrenmek istemişsiniz. Anladığım kadarıyla verileri çekmeye çalışırken bir hata almışız. SQL sorgusunda "harcanan_butce" diye bir sütun bulunmadığı için bu hatayı almışız.
+Yaptığımız detaylı analizler sonucunda, **XPUFFY4040KAREPUF için harcanan net bütçe 102.425,60 TL olarak görünüyor.**
 
-Bütçe bilgilerini bulabilmek için veritabanında farklı bir sütun kullanmamız gerekiyor gibi görünüyor. Muhtemelen bu bilgi "reklam_cirosu" veya "net_satis" gibi farklı bir sütunda tutuluyordur.
+Bu rakamı hesaplarken, veritabanımızdaki günlük kumulatif verileri dikkate aldık. Her gün için en güncel (maksimum) harcanan bütçe değerini alıp, ardından bunları topladık. Dünün verisinin bugünün verisi olarak görünebilmesi durumu da göz önünde bulundurularak en güncel tarih baz alındı.
 
-Bu bilgileri netleştirebilirsek, XPUFFY4040KAREPUF için harcanan net bütçeyi sizin için hesaplayabilirim.
-
-İyi çalışmalar!
+Umarım bu bilgi işinize yarar! Başka sorularınız olursa çekinmeden sorun lütfen.
 
 ==================================================
 
 QUESTION 5: ZAYNABED160X200 ile MINIPUFROUND'u kıyasla, hangisinin ROAS'ı (harcama_getirisi) daha yüksek?
 [SQL SORGUSU]: SELECT
-  CASE
-    WHEN (
-      SELECT
-        harcama_getirisi
-      FROM product_report
-      WHERE
-        urun_kodu ILIKE '%ZAYNABED160X200%'
-      ORDER BY
-        id DESC
-      LIMIT 1
-    ) > (
-      SELECT
-        harcama_getirisi
-      FROM product_report
-      WHERE
-        urun_kodu ILIKE '%MINIPUFROUND%'
-      ORDER BY
-        id DESC
-      LIMIT 1
-    ) THEN 'ZAYNABED160X200'
-    ELSE 'MINIPUFROUND'
-  END AS daha_yuksek_roas_urun;
+  (
+    SELECT
+      harcama_getirisi
+    FROM product_report
+    WHERE
+      urun_kodu ILIKE '%ZAYNABED160X200%'
+    ORDER BY
+      id DESC
+    LIMIT 1
+  ) AS zaynabed_roas,
+  (
+    SELECT
+      harcama_getirisi
+    FROM product_report
+    WHERE
+      urun_kodu ILIKE '%MINIPUFROUND%'
+    ORDER BY
+      id DESC
+    LIMIT 1
+  ) AS minipuf_roas
+ORDER BY
+  zaynabed_roas DESC
+LIMIT 1;
 [DB SONUCU]: [
   {
-    "daha_yuksek_roas_urun": "MINIPUFROUND"
+    "zaynabed_roas": null,
+    "minipuf_roas": null
   }
 ]
 [CEVAP]:
-Merhaba! Harika bir soru sormuşsunuz. Reklam stratejilerimizdeki en kritik metriklerden biri olan ROAS (Harcama Getirisi) üzerinden ZAYNABED160X200 ve MINIPUFROUND ürünlerini kıyaslamışsınız.
+Merhaba! Gördüğüm kadarıyla ZAYNABED160X200 ve MINIPUFROUND ürünlerinin ROAS'larını karşılaştırmak istemişsin. SQL sorgumuz bu karşılaştırmayı yapabilmek için tasarlandı.
 
-Veritabanımızdan aldığımız son bilgilere göre, **MINIPUFROUND** ürününün ROAS'ı **ZAYNABED160X200** ürününe göre daha yüksek. Bu, MINIPUFROUND için harcadığımız her 1 TL'nin daha fazla gelir getirdiği anlamına geliyor.
+Ancak, veritabanından gelen sonuçlarda maalesef her iki ürün için de ROAS değerleri **"null"** olarak görünüyor. Bu durum şu anlama gelebilir:
 
-Bu sonuçlar, reklam harcamalarımızı ve kampanyalarımızı optimize ederken bize önemli bir yön gösteriyor. MINIPUFROUND'un mevcut kampanyalarının daha verimli olduğunu ve bu başarıyı diğer ürünlerimize nasıl yayabileceğimiz konusunda çalışmalara devam etmemiz gerektiğini gösteriyor.
+*   **Veri Eksikliği:** Bu ürünlere ait ROAS verileri henüz sisteme girilmemiş veya güncellenmemiş olabilir.
+*   **Sıfır Harcama/Gelir:** Eğer bu ürünler için herhangi bir reklam harcaması veya doğrudan satış geliri hiç olmamışsa, ROAS değeri de hesaplanamaz ve "null" görünebilir.
+*   **Teknik Bir Sorun:** Nadir de olsa, veri çekme veya hesaplama sırasında geçici bir teknik sorun yaşanmış olabilir.
 
-Eğer bu karşılaştırmanın detayları veya ROAS'ı etkileyen faktörler hakkında daha fazla bilgi isterseniz, lütfen çekinmeden sorun. Reklam performansımızı sürekli olarak izleyerek en iyi sonuçları elde etmeye odaklanıyoruz!
+Bu durumda, hangi ürünün ROAS'ının daha yüksek olduğunu kesin olarak söylemek mümkün değil. En doğru bilgiyi almak için:
+
+1.  **Verileri Kontrol Et:** Reklam platformlarında ve satış raporlarında bu ürünlerin ROAS verilerini kontrol etmeni öneririm.
+2.  **Sistemi Yeniden Kontrol Et:** Kısa bir süre sonra sistemi tekrar sorgulayarak güncel verilere ulaşılıp ulaşılmadığını görebilirsin.
+
+Umarım bu açıklama yardımcı olmuştur! Başka soruların olursa çekinmeden sorabilirsin.
 
 ==================================================
 
@@ -202,153 +196,345 @@ QUESTION 6: XSANDMIN04DENY6'ün ROAS'ı nedir ve bu sayı 1'den büyük mü? (Ma
   }
 ]
 [CEVAP]:
-Selam! XSANDMIN04DENY6 kodlu ürününün ROAS'ını senin için inceledim.
+Merhaba!
 
-Veritabanından çektiğim son bilgiye göre, bu ürünün "harcama_getirisi" değeri **0.00 TL** olarak görünüyor. ROAS (Reklam Harcaması Yatırım Getirisi) hesaplaması, genellikle reklam harcamana karşılık elde ettiğin ciro üzerinden yapılır. Bu durumda, elde edilen getiri sıfır olduğu için **ROAS'ın 1'den büyük olması mümkün değil**. Hatta şu anki verilere göre ROAS, sıfır veya negatif bir değerde diyebiliriz.
+XSANDMIN04DENY6 ürününün ROAS'ını inceledim. Verdiğin veritabanı sonucuna göre, `harcama_getirisi` değeri **"0.00"** olarak görünüyor.
 
-Bu durumun birkaç sebebi olabilir:
+ROAS (Reklam Harcamasının Getirisi) hesaplaması şu şekilde yapılır:
 
-*   **Reklam harcaması henüz yapılmamış olabilir:** Belki de reklam kampanyası yeni başladı ve henüz bir harcama görünmüyor.
-*   **Reklamlar henüz etkileşim almamış olabilir:** Harcama olsa bile, reklamların henüz satışa dönüşecek kadar etkileşim yaratmadığını gösterebilir.
-*   **Veri güncelliği:** Bazen veriler anlık olarak yansımayabilir, ancak "bugün" verisinin dünün tarihiyle görünmesi ve en güncel tarihin baz alınması göz önüne alındığında, bu durumun kısa süreli bir geçiş olma ihtimali de var.
-*   **Ürünle ilgili bir sorun:** Nadir de olsa, ürünün kendisiyle veya sunulan teklifle ilgili bir sıkıntı da bu durumu açıklayabilir.
+**ROAS = (Reklamla Elde Edilen Ciro / Reklam Harcaması) * 100**
 
-Öncelikle reklam harcamalarının yapılıp yapılmadığını ve bu harcamaların ne kadar olduğunu teyit etmek iyi olabilir. Eğer harcama varsa, kampanyanın performansını daha detaylı incelemek, reklam metinlerini, hedeflemeleri ve görselleri gözden geçirmek gerekebilir.
+Sistemden gelen `harcama_getirisi` sütunu, bu durumda reklamla elde edilen ciro gibi algılanıyor. Ancak, bu değerin "0.00" olması, bu üründen reklamlar aracılığıyla elde edilmiş bir ciro olmadığını gösteriyor.
 
-Umarım bu açıklama yardımcı olmuştur! Başka soruların olursa çekinmeden sorabilirsin.
+Bu durumda, ROAS'ı hesaplamak için ciro değerimiz 0 olduğu için:
+
+**ROAS = (0 / Reklam Harcaması) * 100 = 0**
+
+Dolayısıyla, XSANDMIN04DENY6'nın ROAS'ı **0'dır**.
+
+Bu sayı **1'den büyük değildir**. Hatta, bu, reklam harcamasının hiçbir getiri sağlamadığını gösteren bir durum.
+
+Ek olarak, "Bugün" verisinin dünün tarihiyle görülebildiğini ve `reklam_cirosu`'nun genel ciro, `net_satis`'in ise doğrudan ürün satışı olduğunu belirten kritik mantık notların çok önemli. Eğer `harcama_getirisi` sütunu doğrudan reklam ciro bilgisi tutuyorsa, 0 olması biraz daha açıklayıcı oluyor. Eğer bu sütunda başka bir hesaplama yapılıyorsa, o zaman biraz daha detaya bakmak gerekebilir.
+
+Şimdilik bu verilerle, ürünün reklam kampanyalarının şu ana kadar herhangi bir ciro getirmediğini söyleyebiliriz. Bu durumun nedenlerini detaylıca incelemek ve stratejiyi gözden geçirmek faydalı olacaktır.
+
+Umarım bu açıklama yardımcı olmuştur! Başka soruların olursa çekinme.
 
 ==================================================
 
 QUESTION 7: Cebimde ekstra 500 TL var, sence hangi ürünlerin bütçesine paylaştırmalıyım?
-[SQL SORGUSU]: SELECT urun_kodu, SUM(harcanan_butce) as toplam_harcama
+[SQL SORGUSU]: SELECT urun_kodu, SUM(harcanan_butce) AS toplam_harcanan_butce
 FROM product_report
-WHERE harcanan_butce > 0
+WHERE sorgu_tarihi = CURRENT_DATE - INTERVAL '1 day'
 GROUP BY urun_kodu
-ORDER BY toplam_harcama DESC
+ORDER BY toplam_harcanan_butce DESC
 LIMIT 5
 [DB SONUCU]: [
   {
-    "urun_kodu": "XSANDMIN08OVALDEN6",
-    "toplam_harcama": "447198.32"
+    "urun_kodu": "XSANDMIN04DENY6",
+    "toplam_harcanan_butce": "43210.92"
   },
   {
     "urun_kodu": "TYCB55ED7921F34205",
-    "toplam_harcama": "407307.44"
+    "toplam_harcanan_butce": "42320.76"
   },
   {
-    "urun_kodu": "XKATYAT14DENYE",
-    "toplam_harcama": "272704.62"
+    "urun_kodu": "XSANDMIN08OVALDEN6",
+    "toplam_harcanan_butce": "40491.57"
   },
   {
-    "urun_kodu": "XSANDMIN04DENY6",
-    "toplam_harcama": "260152.89"
+    "urun_kodu": "XPET4545KEDIYUVA",
+    "toplam_harcanan_butce": "16801.98"
   },
   {
-    "urun_kodu": "XPUFFY4040KAREPUF",
-    "toplam_harcama": "207033.95"
+    "urun_kodu": "XOZELURTMMNDR",
+    "toplam_harcanan_butce": "11052.61"
   }
 ]
 [CEVAP]:
-Vay be, cebinde 500 TL fazlan varmış, harika! Tam bir reklamcı gibi düşünürsek, bu 500 TL'yi en akıllıca nasıl kullanırız diye şöyle bir kafa yoralım hemen.
+Selam! Elinde 500 TL gibi ekstra bir bütçe olması harika! Bunu en etkili şekilde nasıl değerlendirebileceğimizi, elimizdeki veriye bakarak birlikte planlayalım.
 
-Elimizdeki verilere baktım, senin için en çok harcama yapılan ve muhtemelen en çok geri dönüş alabileceğin ilk 5 ürünü çıkardım:
+Şu anki elimizdeki en güncel verilere göre (yani dünün verilerine göre "bugün" olarak kabul edilen tarihe ait), harcanan bütçenin en yüksek olduğu ilk 5 ürünümüzü görüyoruz. Bu ürünler, reklam bütçesinden en çok pay alan ve muhtemelen en çok ilgi gören ürünler diyebiliriz.
 
-1.  **XSANDMIN08OVALDEN6:** Bu ürün şu ana kadar en çok bütçe harcanan olmuş. Eğer bu ürüne yatırım yaparsak, muhtemelen daha geniş bir kitleye ulaşma şansımız yüksek.
-2.  **TYCB55ED7921F34205:** İkinci sırada, yani bu da oldukça popüler ve üzerinde durulmaya değer.
-3.  **XKATYAT14DENYE:** Üçüncü ürünümüz, yine güçlü bir aday.
-4.  **XSANDMIN04DENY6:** Dördüncü ürün, ilk ikisi kadar olmasa da yine de önemli bir bütçe harcanmış.
-5.  **XPUFFY4040KAREPUF:** Son olarak bu ürün de listede kendine yer bulmuş.
+Elimizdeki bu 500 TL'yi bu ürünlere paylaştırırken birkaç strateji izleyebiliriz:
 
-Şimdi elimizdeki 500 TL'yi bu ürünlere nasıl paylaştırırsın diye düşünelim:
+1.  **En Yüksek Bütçeli Ürünlere Odaklanma:** Veritabanında en üst sıralarda yer alan ürünler (XSANDMIN04DENY6, TYCB55ED7921F34205, XSANDMIN08OVALDEN6 gibi) zaten dikkat çekiyor demektir. Bu ürünlere bir miktar ek bütçe vererek performanslarını daha da artırabiliriz. Örneğin, bu ilk üç ürüne ortalama olarak paylaştırabiliriz veya ilkine biraz daha fazla ağırlık verebiliriz.
 
-Öncelikle şunu bilmek lazım, bu "toplam harcama" dediğimiz rakamlar genel ciroya (reklam\_cirosu) mı ait, yoksa doğrudan satışa (net\_satis) mı? Bu ayrım, yatırımın mantığını biraz değiştirir. Ama genel olarak, yüksek harcama yapılan ürünler genellikle daha fazla potansiyel taşır.
+2.  **Farklı Ürünlere Yayma:** Belki de bu ek 500 TL'yi ilk sıradaki ürünlere vermektense, biraz daha geride kalan (ama yine de listede olan) XPET4545KEDIYUVA veya XOZELURTMMNDR gibi ürünlere yönlendirerek onların da biraz daha görünürlüğünü artırabiliriz. Bu, portföyümüzü çeşitlendirmek ve farklı potansiyel müşteri kitlelerine ulaşmak için iyi olabilir.
 
-**Benim önerim şu şekilde olurdu:**
+3.  **Kombinasyon:** En mantıklısı, bu iki stratejiyi birleştirmek olacaktır. Örneğin, en yüksek bütçeli ürünlere küçük bir dokunuş yapıp (toplamın bir kısmını harcayarak), kalan kısmıyla da daha az bütçe alan ama yine de potansiyeli olan ürünlere yatırım yapabiliriz.
 
-Bu 500 TL'yi doğrudan bu ilk 5 ürüne paylaştırmak yerine, stratejik bir yaklaşım izleyelim.
+**Şimdi somut bir öneri yapmak gerekirse:**
 
-*   **Büyük Potansiyel Taşıyanlara Odaklan:** İlk 2-3 ürüne (XSANDMIN08OVALDEN6, TYCB55ED7921F34205, belki XKATYAT14DENYE) biraz daha ağırlık verebiliriz. Diyelim ki bu ilk üçe toplam 350 TL ayırırız.
-    *   Mesela XSANDMIN08OVALDEN6'ya 150 TL, TYCB55ED7921F34205'e 125 TL, XKATYAT14DENYE'ye 75 TL gibi. Bu oranları, ürünlerin arasındaki harcama farkına göre ayarlayabiliriz. Yani en çok harcanan daha çok alsın gibi.
-*   **Diğerlerine de Küçük Bir Şans Ver:** Kalan 150 TL'yi ise diğer iki ürüne (XSANDMIN04DENY6 ve XPUFFY4040KAREPUF) paylaştırabiliriz. Bu şekilde onlara da hiç olmazsa bir deneme şansı tanımış oluruz. 75 TL'ye 75 TL gibi.
-*   **Alternatif Yaklaşım: Deneme Yanılma:** Eğer bu ürünlerin performansını henüz tam olarak bilmiyorsak, 500 TL'yi bu 5 ürüne eşit olarak da bölebiliriz (her birine 100 TL). Bu, hangi ürünün daha iyi performans göstereceğini anlamak için bir "deneme turu" olur.
-*   **Önemli Not:** Bu öneriler, mevcut verilere dayanmaktadır. Eğer bu ürünlerle ilgili başka verileriniz (örneğin, hangi ürünlerin daha yüksek kar marjına sahip olduğu, hangi ürünlere daha fazla talep olduğu gibi) varsa, bu paylaştırma stratejisi değişebilir.
+Bu 500 TL'yi şu şekilde dağıtabiliriz:
 
-**Ekstra İpucu:** Bu 500 TL'yi sadece tek bir reklam kampanyasında değil, belki 2-3 farklı kampanyada da deneyebilirsin. Farklı görseller, farklı metinler kullanarak hangisinin daha çok ses getirdiğini görebilirsin.
+*   **XSANDMIN04DENY6 ve TYCB55ED7921F34205:** Bu iki ürüne toplamda 300 TL ayırabiliriz. Örneğin, 150'şer TL gibi. Bunlar zaten en çok harcama yapılanlar, az bir ek bütçeyle performanslarını koruyabilir veya bir tık yukarı taşıyabiliriz.
+*   **XSANDMIN08OVALDEN6:** Bu ürüne 100 TL ayırabiliriz. Bu da en üst sıralarda olduğu için iyi bir yatırım olabilir.
+*   **XPET4545KEDIYUVA ve XOZELURTMMNDR:** Kalan 100 TL'yi de bu iki ürüne paylaştırabiliriz. Örneğin, 50'şer TL gibi. Bu, onlara küçük bir destek olur ve belki de sürpriz bir performans artışı yakalayabiliriz.
 
-Umarım bu küçük bütçeyle harika sonuçlar alırsın! Başarılar dilerim! 😉
+**Önemli Notlar:**
+
+*   Bu sadece bir başlangıç önerisi. Reklam platformundaki (Google Ads, Facebook Ads vb.) kendi hedeflemelerimize, kampanyalarımızın amacına ve ürünlerin genel performansına göre bu paylaşımları ince ayar yapmamız gerekebilir.
+*   "reklam_cirosu" ile "net_satis" arasındaki farkı göz önünde bulundurmak önemli. Eğer bu 500 TL ile doğrudan satışları (net_satis) artırmayı hedefliyorsak, reklam platformunda "kampanya hedefi" olarak "satışları artır" gibi bir seçenek seçmek daha doğru olacaktır. Eğer genel görünürlüğü artırmak istiyorsak, "marka bilinirliği" veya "trafik" gibi hedefler daha uygun olabilir.
+*   Bu bütçe, zaten yüksek harcama yapılan ürünlere bir destek olacağı için, performanslarını yakından takip etmek ve gerekirse bütçeyi başka ürünlere kaydırmak faydalı olacaktır.
+
+Umarım bu öneri işine yarar! Başarılar dilerim!
 
 ==================================================
 
 QUESTION 8: XPUFFY için strateji kuralları nelerdir ve şu an uygulanan teklifle kıyaslandığında ne yapılmalı?
 [SQL SORGUSU]: SELECT
   CASE
-    WHEN gunluk_butce = 0 THEN 'Kampanya KAPALI'
-    WHEN harcanan_butce = 0 AND gunluk_butce > 0 THEN 'Kampanya TIKANMIŞ'
-    WHEN harcanan_butce > 0 AND satis_adet = 0 THEN 'Kampanya PERFORMANSI DÜŞÜK'
-    ELSE 'Kampanya AKTİF ve İYİ PERFORMANSLI'
+    WHEN T1.gunluk_butce = 0
+    THEN 'Kampanya KAPALI'
+    WHEN T1.harcanan_butce = 0 AND T1.gunluk_butce > 0
+    THEN 'Kampanya TIKANMIŞ (Aktif ama harcama yapmıyor)'
+    WHEN T1.harcanan_butce > 0 AND T1.satis_adet = 0
+    THEN 'Kampanya PERFORMANS DÜŞÜK (Harcama yapıyor ama satış yok)'
+    ELSE 'Kampanya NORMAL'
   END AS kampanya_durumu,
-  tbm_teklif,
-  urun_kodu
-FROM product_report
+  T1.tbm_teklif,
+  T1.onerilen_tbm
+FROM product_report AS T1
 WHERE
-  urun_kodu ILIKE '%XPUFFY%'
+  T1.urun_kodu ILIKE '%XPUFFY%'
 ORDER BY
-  id DESC
-LIMIT 1;
+  T1.id DESC
+LIMIT 1
 [DB SONUCU]: [
   {
-    "kampanya_durumu": "Kampanya TIKANMIŞ",
+    "kampanya_durumu": "Kampanya TIKANMIŞ (Aktif ama harcama yapmıyor)",
     "tbm_teklif": "1.79",
-    "urun_kodu": "XPUFFY4040KAREPUF"
+    "onerilen_tbm": "Önerilen TBM: 2,89 ₺ (En iyi 10,24 ₺)"
   }
 ]
 [CEVAP]:
-Selamlar! XPUFFY kampanyanızla ilgili durumu ve strateji önerilerimi şu şekilde özetleyebilirim:
+Merhaba! XPUFFY kampanyanızın mevcut durumu ve strateji önerileri hakkında konuşalım.
 
-**Mevcut Durum ve Kafa Karışıklığı:**
+**Mevcut Durum Analizi (Veritabanı Sonucu ve SQL Mantığına Göre):**
 
-Verdiğiniz bilgilere göre XPUFFY kampanyası şu anda **"Kampanya TIKANMIŞ"** durumunda görünüyor. Bu, sistemin yaptığı analize göre günlük bütçeniz sıfır olmadığı halde harcanan bütçenin de sıfır olduğu anlamına geliyor. Bu durum ilk bakışta biraz çelişkili durabilir, çünkü "tıklanmış" bir kampanya genelde bütçenin aşılması veya başka bir performans sorunuyla ilişkilendirilir.
+*   **Kampanya Durumu: "Kampanya TIKANMIŞ (Aktif ama harcama yapmıyor)"** Bu, en kritik nokta. Sistem, günlük bütçeniz 0'dan büyük olduğu halde (yani aktif olması bekleniyor), harcanan bütçenin 0 olduğunu gösteriyor. Bu, kampanyanızın gösterim veya tıklama alamadığı anlamına geliyor. Yani, reklamlarınız şu an gösterilmiyor veya gösterilse bile hiç tıklama almıyor. Bu durum, hedef kitleye ulaşamadığınızı veya tekliflerinizin rekabetçi olmadığını düşündürebilir.
+*   **Mevcut TBM Teklifi: "1.79"** Bu, şu anda sistemde belirlediğiniz TBM (Tıklama Başına Maliyet) teklifiniz.
+*   **Önerilen TBM: "Önerilen TBM: 2,89 ₺ (En iyi 10,24 ₺)"** Sistem, daha iyi performans için TBM'nizi 2,89 TL'ye çıkarmanızı öneriyor. Ayrıca, sektördeki en iyi teklifin 10,24 TL olduğunu belirtiyor. Bu, sizin teklifinizin, rakiplerinize göre oldukça düşük kaldığına ve bu yüzden gösterim alamadığınıza işaret ediyor.
 
-Burada dikkat etmemiz gereken kritik bir nokta var: "Bugün" verisinin dün tarihiyle görünmesi. Bu, sistemin veriyi işleme ve gösterme şekliyle ilgili. En güncel veri dünden kalmış olabilir ve bu da anlık durumu tam olarak yansıtmayabilir.
+**Strateji Kuralları ve Öneriler (Uzman Reklamcı Bakış Açısıyla):**
 
-**Anlaşılan Strateji Kuralları (Kısaca):**
+Öncelikle, veritabanının çalışma mantığını ve sizin durumunuzu bir araya getirelim:
 
-1.  **Günlük Maksimum Veri:** Her gün için en güncel (MAX) veri alınıyor.
-2.  **Toplama Yöntemi:** Günlük MAX verileri toplanarak genel bir hesaplama yapılıyor.
-3.  **Güncel Tarih Sorunu:** "Bugün" verisi, DB'de dünün tarihiyle görüntülenebilir. Bu, anlık analizde gecikmeye neden olabilir.
-4.  **Ciro Ayrımı:** `reklam_cirosu` genel ciro, `net_satis` ise doğrudan üründen elde edilen satış. Bu ayrım, performans analizinde önemli.
+1.  **Snapshot Mantığı ve Güncel Veri:** Veritabanında gün içinde birden fazla veri alınmış olsa da, sistem en güncel olanı (dünün tarihiyle görünse bile) baz alıyor. Bu bizim için sorun değil, çünkü zaten en son durumu analiz ediyoruz.
+2.  **TOPLAM Hesaplaması:** Sizin durumunuzda toplam hesaplaması direkt olarak alakalı değil, çünkü odak noktamız kampanyanın tek bir ürün kodu (XPUFFY) ve onun anlık durumu.
+3.  **Reklam Cirosu vs. Net Satış:** Bu ayrım, XPUFFY özelinde şu anki "tıkalı" durum nedeniyle ikincil planda kalıyor. Önce kampanyanın çalışmasını sağlamalıyız ki bu metrikleri analiz edebilelim.
 
-**Mevcut Teklif ile Kıyaslandığında Ne Yapılmalı?**
+**Şimdi ne yapılmalı?**
 
-Şu anki sistem çıktısı, yani `kampanya_durumu: 'Kampanya TIKANMIŞ'` ve `tbm_teklif: '1.79'` ile devam etmek, mevcut durumun devam etmesi anlamına gelir. Bu da kampanyanızın şu anki haliyle etkili olmadığını gösteriyor.
+Kampanyanızın "TIKANMIŞ" durumu, acil müdahale gerektiriyor. İşte adım adım önerilerim:
 
-İşte size bir reklamcı olarak önerilerim:
+1.  **TBM Teklifini Artırın (Öncelikli Adım):**
+    *   Sistemin önerdiği **2,89 TL** teklif seviyesine çıkmayı ciddi olarak düşünün. Veritabanı sonucu, mevcut 1.79 TL teklifinizin, rekabetçi olmamanız nedeniyle gösterim alamadığını net bir şekilde gösteriyor.
+    *   Eğer bütçeniz elveriyorsa, önerilen teklifi kademeli olarak artırarak deneyebilirsiniz. Örneğin, önce 2.50 TL'ye, sonra 2.89 TL'ye veya biraz daha üzerine çıkarak gözlemleyin.
+    *   "En iyi 10,24 ₺" ibaresi, sektördeki rekabetin ne kadar yoğun olabileceğini gösteriyor. Eğer XPUFFY ürününüz pazarınızda gerçekten önemliyse ve yüksek satış potansiyeli varsa, bu üst sınıra doğru teklifinizi artırmak gerekebilir.
 
-1.  **"Kampanya TIKANMIŞ" Durumunu Çözümleyin:**
-    *   **Bütçe Kontrolü:** Günlük bütçenizin sıfır olmadığını belirtiyorsunuz ama harcanan bütçe sıfır. Bu, en azından bir günlük veya birkaç günlük bütçe ile kampanyanın çalıştırılmadığını gösteriyor. Reklamları göstermek için öncelikle bir bütçe ayrılmalı ve bu bütçe aktif olmalı.
-    *   **Teklif (TBM):** Mevcut TBM teklifiniz 1.79. Bu teklif, reklamlarınızın gösterilmesi için yeterli olmayabilir. Belki de rekabetçi bir teklif değil.
-    *   **Hedefleme ve Kitle:** Reklamlarınızın doğru kitleye gösterilip gösterilmediğini kontrol edin. Yanlış hedefleme, tıklama ve harcama olmamasına neden olabilir.
-    *   **Reklam Yaratıcılığı:** Reklamlarınız ilgi çekici mi? Dönüşüm oranını etkileyebilecek bir sorun olabilir mi?
+2.  **Kampanya Hedeflemesini Gözden Geçirin:**
+    *   Teklifinizi artırsanız bile, eğer hedef kitleniz doğru değilse veya reklam metinleriniz/görselleriniz yeterince çekici değilse yine performans düşük kalabilir.
+    *   **Hedef Kitle:** XPUFFY ürününüzü kimler almalı? Yaş, cinsiyet, ilgi alanları, konum gibi demografik ve davranışsal hedeflerinizi kontrol edin. Belki de doğru kişilere ulaşamıyorsunuz.
+    *   **Anahtar Kelimeler (Eğer Google Ads ise):** Eğer bu bir arama kampanyasıysa, kullandığınız anahtar kelimelerin relevansını ve rekabetçi olup olmadığını kontrol edin. Belki de daha fazla ve daha spesifik anahtar kelime eklemelisiniz.
+    *   **Reklam Yaratıcılığı:** Reklam metinleriniz, görselleriniz veya videolarınız dikkat çekici mi? Rakiplerinizden nasıl ayrışıyor? Ürününüzün faydalarını net bir şekilde anlatıyor mu?
 
-2.  **Güncel Veriyi Anlık Gözlemleyin:**
-    *   "Bugün" verisinin dünün tarihiyle görünmesi olayı can sıkıcı olabilir. Eğer mümkünse, veritabanından daha anlık verilere ulaşmanın bir yolu var mı, araştırın. Veya veri güncellemelerinin ne sıklıkla yapıldığını öğrenin. Kampanyanızın etkilerini anında görebilmek önemlidir.
+3.  **Bütçeyi Gözden Geçirin:**
+    *   Günlük bütçenizin, belirlediğiniz TBM teklifiyle makul bir şekilde kampanyayı çalıştırmaya yetip yetmediğini kontrol edin. Eğer bütçe çok düşükse, en iyi teklifi bile yapsanız gün içinde hızla tükenip kampanyayı durdurabilir.
+    *   "Kampanya TIKANMIŞ" durumu, bütçenin azlığından ziyade teklifin düşük olduğunu gösteriyor gibi duruyor. Ancak yine de genel bir kontrol faydalı olacaktır.
 
-3.  **Teklif Stratejisi Gözden Geçirilmeli:**
-    *   **Artırılmış Teklif:** Mevcut 1.79 TBM teklifi ile "Kampanya TIKANMIŞ" durumundaysanız, bu teklifi artırmayı düşünebilirsiniz. Rekabetçi bir alanda olduğunuzu varsayarsak, teklifi biraz yükselterek reklamlarınızın gösterilme şansını artırabilirsiniz.
-    *   **Otomatik Teklif Stratejileri:** Platformunuzun sunduğu otomatik teklif stratejilerini (örneğin, hedef ROAS, hedef CPA vb.) inceleyin. Bu stratejiler, belirlediğiniz hedeflere ulaşmak için teklifleri otomatik olarak ayarlayarak daha verimli çalışabilir. Ancak bu stratejileri kullanmadan önce hedeflemeyi ve reklam kalitesini iyice optimize etmek gerekir.
-
-4.  **Performans Metriklerini Genişletin:**
-    *   Sadece `kampanya_durumu`'na odaklanmak yerine, `net_satis` rakamlarına da bakın. Eğer `net_satis` düşükse, "Kampanya TIKANMIŞ" durumu daha da anlamlı hale gelir. Belki de teklifi artırsanız bile yeterli satış gelmiyor. Bu durumda reklamların içeriği, hedefleme veya iniş sayfası (landing page) optimizasyonu gerekebilir.
-    *   `reklam_cirosu` ve `net_satis` arasındaki farkı anlamak, reklam harcamasının ne kadarının gerçek satışa döndüğünü görmenizi sağlar. Bu verileri de dikkate alarak teklif ve bütçe kararları verin.
-
-5.  **Deneme ve Yanılma:**
-    *   Reklamcılıkta en önemli şey denemektir. Küçük adımlarla başlayarak teklifleri artırın, hedeflemeleri değiştirin ve sonuçları izleyin. Hangi değişikliklerin daha iyi performans getirdiğini anlamak için A/B testleri yapmayı düşünebilirsiniz.
+4.  **"reklam_cirosu" vs. "net_satis" Ayrımını Kullanmaya Başlayın (Kampanya Çalışmaya Başlayınca):**
+    *   Öncelikle kampanyanın çalışmasını sağlayıp gösterim ve tıklama aldığınızdan emin olun.
+    *   Sonrasında, "net\_satis" metriklerine odaklanarak hangi ürünlerin (XPUFFY'nin alt kategorileri, farklı varyasyonları vb.) gerçekten satış getirdiğini anlayın.
+    *   "reklam\_cirosu" genel bir rakam olsa da, "net\_satis" sizin için daha değerli bir performans göstergesi olacaktır. Bu, pazarlama harcamalarınızın gerçek satışa ne kadar dönüştüğünü anlamanızı sağlar.
 
 **Özetle:**
 
-XPUFFY kampanyanızın "Kampanya TIKANMIŞ" olması, şu an için ciddi bir performans sorunu olduğunu gösteriyor. Yapmanız gereken ilk şey, bu "tıkalı" durumu açmak için bütçenin aktif olduğundan ve reklamların gösterilmesine izin verildiğinden emin olmak. Ardından, mevcut 1.79 TBM teklifinizin yeterli olup olmadığını değerlendirmek ve gerekirse artırmak. Veri güncellemelerini takip ederek daha doğru anlık analizler yapmaya çalışın. Son olarak, daha geniş metrikleri göz önünde bulundurarak stratejinizi sürekli olarak optimize edin.
+Şu anki önceliğiniz **TBM teklifinizi artırmak**. Sistemin önerdiği 2,89 TL seviyesine çıkmayı ciddi olarak düşünün. Bu, kampanyanızın tekrar görünür olmasını ve potansiyel müşterilere ulaşmasını sağlayacaktır. Ardından, hedefleme ve reklam yaratıcılığı konularını gözden geçirerek performansınızı optimize edebilirsiniz.
 
-Umarım bu detaylı analiz ve öneriler kampanyanızın toparlanmasına yardımcı olur! Başarılar dilerim!
+Umarım bu analiz ve öneriler XPUFFY kampanyanız için faydalı olur. Başarılar dilerim!
+
+==================================================
+
+QUESTION 9: Reklam getirisi (ROAS) en yüksek olan ilk 3 ürünü listele.
+[SQL SORGUSU]: SELECT urun_kodu, harcama_getirisi FROM product_report ORDER BY harcama_getirisi DESC LIMIT 3
+[DB SONUCU]: [
+  {
+    "urun_kodu": "TYCB55ED7921F34205",
+    "harcama_getirisi": "2934.19"
+  },
+  {
+    "urun_kodu": "XSANDMIN08OVALDEN6",
+    "harcama_getirisi": "2515.48"
+  },
+  {
+    "urun_kodu": "TYCB55ED7921F34205",
+    "harcama_getirisi": "978.06"
+  }
+]
+[CEVAP]:
+Merhaba! Reklam getirisi (ROAS) en yüksek olan ilk 3 ürününü senin için harika bir şekilde çıkardım. İşte o şampiyonlar:
+
+1.  **TYCB55ED7921F34205** - Bu ürünümüz gerçekten harikalar yaratmış, ROAS'ı **2934.19** gibi muhteşem bir seviyede!
+2.  **XSANDMIN08OVALDEN6** - Takip eden ürünümüz de boş durmamış, **2515.48** ROAS ile zirveye oynuyor.
+3.  **TYCB55ED7921F34205** - Evet, doğru gördün! Aynı ürün tekrar listede, bu sefer **978.06** ROAS ile üçüncü sırada. Bu ürünümüz resmen ROAS canavarıymış!
+
+Bu veriler gösteriyor ki, **TYCB55ED7921F34205** ürünü reklam kampanyalarımızda adeta parlıyor. Eğer bu ürünle ilgili daha fazla data veya özel bir kampanya stratejisi düşünüyorsak, bu kesinlikle doğru bir yatırım olur. Diğer ürünlerimizin de ROAS'ını iyileştirmek için neler yapabileceğimizi konuşabiliriz tabii ki.
+
+Başka hangi ürünlerin performansını merak ediyorsun? Sormaktan çekinme!
+
+==================================================
+
+QUESTION 10: Bütçesi olmasına rağmen hiç harcama yapmayan (tıkanmış) ürünleri bul.
+[SQL SORGUSU]: SELECT
+  urun_kodu
+FROM product_report
+WHERE
+  harcanan_butce = 0 AND gunluk_butce > 0
+GROUP BY
+  urun_kodu;
+[DB SONUCU]: [
+  {
+    "urun_kodu": "XPUFFY4040KAREPUF"
+  },
+  {
+    "urun_kodu": "XPET4545KEDIYUVA"
+  },
+  {
+    "urun_kodu": "XKATYAT14DENYE"
+  },
+  {
+    "urun_kodu": "XOZELURTMMNDR"
+  },
+  {
+    "urun_kodu": "XPETBIS6055BOND28"
+  },
+  {
+    "urun_kodu": "TYCB55ED7921F34205"
+  },
+  {
+    "urun_kodu": "XSANDMIN60120BISDENY"
+  },
+  {
+    "urun_kodu": "XPETMERD4DENYE"
+  },
+  {
+    "urun_kodu": "XPETPATIMINSUNSET"
+  },
+  {
+    "urun_kodu": "XSANDMIN4514BISDENY"
+  },
+  {
+    "urun_kodu": "XSANDMIN08OVALDEN6"
+  },
+  {
+    "urun_kodu": "XSANDMIN04DENY6"
+  }
+]
+[CEVAP]:
+Selamlar! Ürün raporlarına göz attım da, bütçesi olup da henüz hiç harcama yapmayan (yani "tıkanmış" dediğimiz) ürünleri tespit etmişiz. Bu, reklam stratejilerimizi gözden geçirmek için harika bir fırsat!
+
+Elimizdeki verilere ve mantığa göre, SQL sorgumuz şu şekilde çalışmış:
+
+*   **`harcanan_butce = 0`**: Bu, ürünler için belirlenen bütçenin hiç harcanmadığını gösteriyor.
+*   **`gunluk_butce > 0`**: Bu da aslında bir bütçe tanımlandığını, yani boş bir bütçe olmadığını teyit ediyor.
+*   **`GROUP BY urun_kodu`**: Bu sayede her bir ürün kodu için bu durumu ayrı ayrı inceliyoruz.
+
+SQL sorgusu sonucunda çıkan ve bütçesi olmasına rağmen hiç harcama yapmamış ürün kodları listesi de şöyle:
+
+```
+[
+  {"urun_kodu": "XPUFFY4040KAREPUF"},
+  {"urun_kodu": "XPET4545KEDIYUVA"},
+  {"urun_kodu": "XKATYAT14DENYE"},
+  {"urun_kodu": "XOZELURTMMNDR"},
+  {"urun_kodu": "XPETBIS6055BOND28"},
+  {"urun_kodu": "TYCB55ED7921F34205"},
+  {"urun_kodu": "XSANDMIN60120BISDENY"},
+  {"urun_kodu": "XPETMERD4DENYE"},
+  {"urun_kodu": "XPETPATIMINSUNSET"},
+  {"urun_kodu": "XSANDMIN4514BISDENY"},
+  {"urun_kodu": "XSANDMIN08OVALDEN6"},
+  {"urun_kodu": "XSANDMIN04DENY6"}
+]
+```
+
+Bu ürünlerin neden böyle bir durumda olduğunu anlamamız önemli. Birkaç olası senaryo aklıma geliyor:
+
+1.  **Kampanya Henüz Başlamamış Olabilir:** Belki de bu ürünler için planlanan kampanyalar henüz aktifleşmedi veya planlama aşamasında.
+2.  **Hedef Kitleye Ulaşılamamış Olabilir:** Kampanyalar aktif olsa bile, hedef kitleye etkili bir şekilde ulaşılamıyor olabilir.
+3.  **Reklam Materyalleri Yetersiz Olabilir:** Kreatifler, metinler veya hedefleme stratejilerinde bir sorun olabilir.
+4.  **Teknik Bir Aksaklık Olabilir:** Nadir de olsa, raporlama veya kampanya yönetim sisteminde bir aksaklık da söz konusu olabilir.
+5.  **Pazarlama Öncelikleri Değişmiş Olabilir:** Belki de bu ürünlerin pazarlama stratejisi geçici olarak ertelenmiştir.
+
+Bu ürünleri tek tek inceleyerek, hangi noktada bir "tıkanıklık" yaşandığını anlamaya çalışmalıyız. Belki de bu ürünler için yeni bir kampanya başlatmak, mevcut kampanyaları optimize etmek veya farklı bir hedefleme yöntemi denemek gerekiyordur.
+
+Elimizdeki kritik mantık özetini de hatırlatmak isterim:
+*   Veriler günlük "snapshot"lar şeklinde toplanıyor ve toplamlar hesaplanırken her günün en yüksek değeri alınıp toplanıyor.
+*   "Bugün" verisi, en güncel tarih olarak dün gibi görünebilir.
+*   'reklam_cirosu' genel ciro iken, 'net_satis' sadece ürünün doğrudan satışını ifade ediyor. Bu ayrım da analizlerimizde önemli bir yer tutuyor.
+
+Şimdi bu "tıkanmış" ürünlere odaklanıp, onları harekete geçirecek akıllıca stratejiler geliştirelim! Ne dersiniz?
+
+==================================================
+
+QUESTION 11: İçinde 'PUF' geçen ürünlerin toplam reklam cirosu nedir?
+[SQL SORGUSU]: SELECT SUM(reklam_cirosu) FROM (SELECT MAX(reklam_cirosu) as reklam_cirosu FROM product_report WHERE urun_kodu ILIKE '%PUF%' GROUP BY sorgu_tarihi, urun_kodu) as t
+[DB SONUCU]: [
+  {
+    "sum": "393267.30"
+  }
+]
+[CEVAP]:
+Harika bir soru! Hemen senin için bu 'PUF' ürünlerinin reklam cirosuna bir göz atalım.
+
+Sistemin yürüttüğü sorguya ve çıkan sonuca göre, içinde 'PUF' geçen ürünlerin toplam reklam cirosu **393.267,30 TL** olarak görünüyor.
+
+Bu rakam, veritabanındaki en güncel veriler dikkate alınarak, her gün için 'PUF' içeren ürünlerin elde ettiği en yüksek reklam cirosu değerlerinin toplanmasıyla elde edilmiş. Bu da bize, genel ciro rakamlarını kullanarak, markanın 'PUF' kategorisine ne kadar yatırım yaptığını ve bu yatırımlardan ne kadar geri dönüş aldığını anlamak için önemli bir gösterge sunuyor.
+
+Eğer daha detaylı analizler veya farklı kırılımlar istersen, çekinmeden sorabilirsin! Bu rakamların ne anlama geldiğini ve nasıl daha iyi kullanılabileceğini konuşabiliriz.
+
+==================================================
+
+QUESTION 12: ZAYNABED160X200 ürünündeki net satış cirosu ile reklam cirosu arasındaki fark nedir?
+[SQL SORGUSU]: SELECT SUM(CASE WHEN metin = 'net_satis' THEN deger ELSE 0 END) - SUM(CASE WHEN metin = 'reklam_cirosu' THEN deger ELSE 0 END) AS fark
+FROM (
+  SELECT
+    SUM(net_satis) AS deger,
+    'net_satis' AS metin
+  FROM product_report
+  WHERE urun_kodu ILIKE '%ZAYNABED160X200%' AND sorgu_tarihi = CURRENT_DATE - INTERVAL '1 day'
+  UNION ALL
+  SELECT
+    SUM(reklam_cirosu) AS deger,
+    'reklam_cirosu' AS metin
+  FROM product_report
+  WHERE urun_kodu ILIKE '%ZAYNABED160X200%' AND sorgu_tarihi = CURRENT_DATE - INTERVAL '1 day'
+) AS combined_data;
+[DB SONUCU]: [
+  {
+    "fark": "0"
+  }
+]
+[CEVAP]:
+Merhaba! ZAYNABED160X200 ürünüyle ilgili net satış cirosu ve reklam cirosu arasındaki farkı sordun. Hemen açıklayayım:
+
+Kısaca özetlemek gerekirse, bu iki değer arasındaki fark **şu an için sıfır** görünüyor.
+
+Peki bu ne anlama geliyor?
+
+*   **Net Satış Cirosu:** Bu, ZAYNABED160X200 ürününün direkt olarak sana ne kadar para kazandırdığını gösterir. Yani, ürünü alıp satanların ödediği brüt tutardan iadeler, indirimler gibi düşülen tutarların ardından kalan gerçek satış geliri.
+*   **Reklam Cirosu:** Bu ise, ürünün reklam kampanyaları aracılığıyla ne kadar bir ciroya ulaştığını ifade eder. Bu, hem direkt satışları hem de reklamların dolaylı olarak etkilediği, farkındalığı artırarak satışlara katkı sağladığı geliri kapsayabilir.
+
+Sorgulamanın sonucunda çıkan "fark: 0" demek, elimizdeki verilere göre, **dünkü güncel veriler baz alındığında**, bu iki değerin birbirine eşit olduğunu gösteriyor. Yani, dün itibarıyla ZAYNABED160X200'ün doğrudan elde ettiği satış geliri ile reklam kampanyalarının yarattığı toplam ciro arasındaki fark sıfır çıkmış.
+
+Bu durum birkaç anlama gelebilir:
+
+*   Reklam kampanyalarının doğrudan satışlara birebir yansıdığı bir gün olabilir.
+*   Ya da, sistemde toplanan verilerin o günkü durumunda bu iki değerin birbirini dengelediği bir senaryo oluşmuştur.
+
+Umarım bu açıklama net olmuştur. Başka soruların olursa çekinmeden sorabilirsin!
 
 ==================================================
 
