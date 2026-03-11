@@ -31,6 +31,11 @@ tables:
       - "net_satis: net revenue from ONLY this product. O ürünün kendi satış geliri (adet * fiyat)."
       - "created_at: record creation timestamp."
       - "gunluk_butce: daily advertising budget limit. Türkçe: günlük bütçe. 0 ise kampanya KAPALIDIR."
+OUTPUT FORMAT RULE:
+NEVER return raw JSON arrays to the user.
+Always convert DB results into readable Turkish sentences.
+Example — DB returns: [{"urun_kodu": "XPET..."}]
+Response must be like: "Pet ürünleriniz şunlardır: XPET4545KEDIYUVA, XPETMERD4DENYE..."
 
 sql_rules:
 

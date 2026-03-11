@@ -1,3 +1,214 @@
---- BACKUP AGENT CONTEXTUAL TEST LOG (2026-03-11 16:59:31) ---
+--- BACKUP AGENT CONTEXTUAL TEST LOG (2026-03-11 17:08:57) ---
 Model ID: gemini-2.5-flash-lite
 
+QUESTION 1: Hangi pet (evcil hayvan) ürünlerimiz var?
+[SQL SORGUSU]: SELECT DISTINCT urun_kodu FROM product_report WHERE urun_kodu ILIKE '%PET%' LIMIT 30
+[DB SONUCU]: [
+  {
+    "urun_kodu": "XPETMERD4DENYE"
+  },
+  {
+    "urun_kodu": "XPETPATIMINSUNSET"
+  },
+  {
+    "urun_kodu": "XPET4545KEDIYUVA"
+  },
+  {
+    "urun_kodu": "XPETBIS6055BOND28"
+  }
+]
+[CEVAP]:
+[
+  {
+    "urun_kodu": "XPETMERD4DENYE"
+  },
+  {
+    "urun_kodu": "XPETPATIMINSUNSET"
+  },
+  {
+    "urun_kodu": "XPET4545KEDIYUVA"
+  },
+  {
+    "urun_kodu": "XPETBIS6055BOND28"
+  }
+]
+
+==================================================
+
+QUESTION 2: Peki bunlardan en çok hangisi harcama yaptı? (Bağlam Testi)
+[SQL SORGUSU]: SELECT
+  urun_kodu,
+  SUM(daily_spend) AS toplam_harcama
+FROM (
+  SELECT
+    urun_kodu,
+    sorgu_tarihi,
+    MAX(harcanan_butce) AS daily_spend
+  FROM product_report
+  WHERE
+    urun_kodu IN ('XPETMERD4DENYE', 'XPETPATIMINSUNSET', 'XPET4545KEDIYUVA', 'XPETBIS6055BOND28')
+  GROUP BY
+    urun_kodu,
+    sorgu_tarihi
+) AS daily_finals
+GROUP BY
+  urun_kodu
+ORDER BY
+  toplam_harcama DESC
+LIMIT 1;
+[DB SONUCU]: [
+  {
+    "urun_kodu": "XPET4545KEDIYUVA",
+    "toplam_harcama": "43326.08"
+  }
+]
+[CEVAP]:
+En çok harcama yapan ürün 'XPET4545KEDIYUVA' olup, toplam harcaması 43.326,08'dir.
+
+==================================================
+
+QUESTION 3: Bu harcamayı neye borçlu, gösterim sayısı mı yüksek yoksa tıklanma mı? (Bağlam + Derinlik Testi)
+[SQL SORGUSU]: SELECT
+  urun_kodu,
+  SUM(daily_impressions) AS toplam_gosterim,
+  SUM(daily_clicks) AS toplam_tiklanma
+FROM (
+  SELECT
+    urun_kodu,
+    sorgu_tarihi,
+    MAX(gosterim_sayisi) AS daily_impressions,
+    MAX(tiklanma_sayisi) AS daily_clicks
+  FROM product_report
+  WHERE
+    urun_kodu ILIKE '%XPET4545KEDIYUVA%'
+  GROUP BY
+    urun_kodu,
+    sorgu_tarihi
+) AS daily_finals
+GROUP BY
+  urun_kodu;
+[DB SONUCU]: [
+  {
+    "urun_kodu": "XPET4545KEDIYUVA",
+    "toplam_gosterim": "1376195",
+    "toplam_tiklanma": "21196"
+  }
+]
+[CEVAP]:
+'XPET4545KEDIYUVA' ürün kodlu ürün için toplam gösterim sayısı 1.376.195, toplam tıklanma sayısı ise 21.196'dır. Gösterim sayısı tıklanma sayısından belirgin şekilde daha yüksektir.
+
+==================================================
+
+QUESTION 4: ZAYNABED160X200 ürününü incele.
+[SQL SORGUSU]: SELECT
+  urun_kodu,
+  SUM(daily_spend)        AS toplam_harcama,
+  SUM(daily_impressions)  AS toplam_gosterim,
+  SUM(daily_clicks)       AS toplam_tiklanma,
+  SUM(daily_revenue)      AS toplam_ciro,
+  SUM(daily_sales)        AS toplam_satis,
+  SUM(daily_revenue) / NULLIF(SUM(daily_spend), 0) AS gercek_roas
+FROM (
+  SELECT
+    urun_kodu,
+    sorgu_tarihi,
+    MAX(harcanan_butce)   AS daily_spend,
+    MAX(gosterim_sayisi)  AS daily_impressions,
+    MAX(tiklanma_sayisi)  AS daily_clicks,
+    MAX(reklam_cirosu)    AS daily_revenue,
+    MAX(satis_adet)       AS daily_sales
+  FROM product_report
+  WHERE urun_kodu ILIKE '%ZAYNABED160X200%'
+  GROUP BY urun_kodu, sorgu_tarihi
+) AS daily_finals
+GROUP BY urun_kodu;
+[DB SONUCU]: []
+[CEVAP]:
+Bu ürün kodu için veritabanında kayıt bulunamadı. Lütfen ürün kodunu kontrol ediniz.
+
+==================================================
+
+QUESTION 5: Bunun ROAS'ı dünden bugüne nasıl değişti? (Bağlam Testi)
+[SQL SORGUSU]: SELECT
+  sorgu_tarihi,
+  MAX(reklam_cirosu) / NULLIF(MAX(harcanan_butce), 0) AS roas
+FROM product_report
+WHERE
+  urun_kodu ILIKE '%X200%' AND sorgu_tarihi >= (
+    CURRENT_DATE - INTERVAL '2 days'
+  )
+GROUP BY
+  sorgu_tarihi
+ORDER BY
+  sorgu_tarihi DESC;
+[DB SONUCU]: []
+[CEVAP]:
+Önceki sorguda bu ürün için veri bulunamıştı. Hangi ürün hakkında devam edelim?
+
+==================================================
+
+QUESTION 6: Neden böyle bir değişim olmuş olabilir, bütçesi mi artmış? (Bağlam + Analiz Testi)
+[SQL SORGUSU]: SELECT
+  urun_kodu,
+  SUM(daily_spend) AS toplam_harcama,
+  SUM(daily_impressions) AS toplam_gosterim,
+  SUM(daily_clicks) AS toplam_tiklanma,
+  SUM(daily_revenue) AS toplam_ciro,
+  SUM(daily_sales) AS toplam_satis,
+  SUM(daily_revenue) / NULLIF(SUM(daily_spend), 0) AS gercek_roas
+FROM (
+  SELECT
+    urun_kodu,
+    sorgu_tarihi,
+    MAX(harcanan_butce) AS daily_spend,
+    MAX(gosterim_sayisi) AS daily_impressions,
+    MAX(tiklanma_sayisi) AS daily_clicks,
+    MAX(reklam_cirosu) AS daily_revenue,
+    MAX(satis_adet) AS daily_sales
+  FROM product_report
+  WHERE urun_kodu ILIKE '%ZAYNABED160X200%'
+  GROUP BY
+    urun_kodu,
+    sorgu_tarihi
+) AS daily_finals
+GROUP BY
+  urun_kodu;
+[DB SONUCU]: []
+[CEVAP]:
+Bu ürün için son 2 güne ait ROAS verisi bulunamadı. Ürün kodu X200 ile ilgili daha fazla veri olup olmadığını kontrol edebilirsiniz.
+
+==================================================
+
+QUESTION 7: Cebimde ekstra 500 TL var, sence hangi ürünlerin bütçesine paylaştırmalıyım?
+[SQL SORGUSU]: SELECT
+  urun_kodu,
+  MAX(harcama_getirisi) AS roas,
+  MAX(gunluk_butce) AS gunluk_butce
+FROM product_report
+WHERE
+  sorgu_tarihi = (
+    SELECT
+      MAX(sorgu_tarihi)
+    FROM product_report
+  )
+GROUP BY
+  urun_kodu
+HAVING
+  MAX(harcama_getirisi) > 0 AND MAX(gunluk_butce) > 0
+ORDER BY
+  roas DESC
+LIMIT 5;
+[DB SONUCU]: [
+  {
+    "urun_kodu": "TYCB55ED7921F34205",
+    "roas": "10.62",
+    "gunluk_butce": 500
+  }
+]
+[CEVAP]:
+TYCB55ED7921F34205 ürünü 10.62 ROAS ile öne çıkıyor. Bütçenizi bu ürüne odaklayabilirsiniz.
+
+==================================================
+
+
+[CRITICAL ERROR]: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}
