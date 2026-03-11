@@ -1,6 +1,7 @@
 import streamlit as st
 import asyncio
 import os
+import json
 from datetime import datetime
 from simple_agent import BackupAgent
 
@@ -10,10 +11,47 @@ st.set_page_config(page_title="ROB", page_icon="💥🚀", layout="centered")
 st.title("⚡ Reklam Analiz Yardımcısı")
 st.markdown("Gemini ile çalışıyor! 🚀")
 
+# --- 1. AYARLAR VE HAFIZA ---
+MAX_HISTORY_MESSAGES = 10  # LLM'e gönderilecek son mesaj sayısı
+HISTORY_DIR = os.path.join(os.path.dirname(__file__), "chat_history")
+os.makedirs(HISTORY_DIR, exist_ok=True)
 
-# 1. OTURUM HAFIZASINI HAZIRLA (Session State)
+def get_history_path(username):
+    return os.path.join(HISTORY_DIR, f"{username.lower().strip()}.json")
+
+def save_history(username, messages):
+    if not username: return
+    path = get_history_path(username)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(messages, f, ensure_ascii=False, indent=2)
+
+def load_history(username):
+    path = get_history_path(username)
+    if os.path.exists(path):
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    return []
+
+# --- 2. KULLANICI GİRİŞİ (SIDEBAR) ---
+with st.sidebar:
+    st.header("👤 Kullanıcı Paneli")
+    username = st.text_input("Kullanıcı Adı", placeholder="Örn: Onur").strip()
+    if st.button("Sohbeti Temizle") and username:
+        st.session_state.messages = []
+        save_history(username, [])
+        st.rerun()
+
+# --- 3. OTURUM HAFIZASINI HAZIRLA ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "current_user" not in st.session_state:
+    st.session_state.current_user = None
+
+# Kullanıcı değişmişse veya yeni girilmişse geçmişi yükle
+if username and st.session_state.current_user != username:
+    st.session_state.messages = load_history(username)
+    st.session_state.current_user = username
 
 if "loop" not in st.session_state:
     st.session_state.loop = asyncio.new_event_loop()
@@ -23,7 +61,6 @@ def get_backup_agent():
     """BackupAgent nesnesini bir kez oluşturup hafızada tutar."""
     agent = BackupAgent()
     loop = st.session_state.loop
-    # Bağlantıyı asenkron olarak başlat
     loop.run_until_complete(agent.connect())
     return agent
 
@@ -39,80 +76,60 @@ for msg in st.session_state.messages:
             with st.expander("🔍 SQL Detayı"):
                 st.code(msg["sql"], language="sql")
 
-# Ürün kodları (Otomatik tamamlama için)
-PRODUCT_CODES = [
-    "XPUFFY4040KAREPUF", "XPET4545KEDIYUVA", "XKATYAT14DENYE", "XOZELURTMMNDR",
-    "XPETBIS6055BOND28", "TYCB55ED7921F34205", "XSANDMIN60120BISDENY",
-    "XPETMERD4DENYE", "XPETMERD4DENYE", "XPETPATIMINSUNSET", "XSANDMIN4514BISDENY",
-    "XSANDMIN08OVALDEN6", "XSANDMIN04DENY6"
-]
+# --- 4. CHAT INPUT ---
+if not username:
+    st.info("💡 Lütfen sohbete başlamak için soldaki menüden bir kullanıcı adı girin.")
+else:
+    if prompt := st.chat_input("Ürün Hakkında Soru Sor..."):
+        # Kullanıcının mesajını ekrana bas ve hafızaya al
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        save_history(username, st.session_state.messages) # Kaydet
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-# JavaScript Kestirmeleri ve Auto-Focus
-import streamlit.components.v1 as components
-components.html(
-    """
-    <script>
-    const doc = window.parent.document;
-    function setupInteractions() {
-        const input = doc.querySelector('textarea[data-testid="stChatInputTextArea"]');
-        if (!input) return;
-        if (doc.activeElement !== input) input.focus();
-        if (!input.dataset.shortcutAdded) {
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' && (e.shiftKey || e.ctrlKey)) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const btn = input.closest('div[data-testid="stChatInput"]').querySelector('button[data-testid="stChatInputSubmitButton"]');
-                    if (btn) btn.click();
-                }
-            }, true);
-            input.dataset.shortcutAdded = "true";
-        }
-    }
-    setInterval(setupInteractions, 1000);
-    setTimeout(setupInteractions, 500);
-    </script>
-    """,
-    height=0,
-)
-
-# 2. CHAT INPUT
-if prompt := st.chat_input("Ürün Hakkında Soru Sor..."):
-    # Kullanıcının mesajını ekrana bas ve hafızaya al
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    # Botun cevabını üret
-    with st.chat_message("assistant"):
-        with st.status("Düşünülüyor...", expanded=True) as status:
-            try:
-                loop = st.session_state.loop
-                
-                # Adım 1: SQL Üret
-                st.write("⏳ SQL hazırlanıyor...")
-                sql_query = loop.run_until_complete(agent.generate_sql(prompt))
-                st.code(sql_query, language="sql")
-                
-                # Adım 2: SQL Çalıştır
-                st.write("📊 Veritabanına soruluyor...")
-                db_result = loop.run_until_complete(agent.execute_sql(sql_query))
-                print(f"🔍 [LOG] SQL: {sql_query}")
-                
-                # Adım 3: Final Cevap
-                st.write("🧠 Cevap hazırlanıyor..")
-                answer = loop.run_until_complete(agent.get_answer(prompt, sql_query, db_result))
-                
-                status.update(label="Tamamlandı!", state="complete", expanded=False)
-                
-                # Sonucu göster
-                st.markdown(answer)
-                st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": answer, 
-                    "sql": sql_query
-                })
-                
-            except Exception as e:
-                st.error(f"Hata oluştu: {e}")
-                status.update(label="Hata!", state="error")
+        # Botun cevabını üret
+        with st.chat_message("assistant"):
+            with st.status("Düşünülüyor...", expanded=True) as status:
+                try:
+                    loop = st.session_state.loop
+                    
+                    # Adım 1: SQL Üret
+                    st.write("⏳ SQL hazırlanıyor...")
+                    # Sadece son MAX_HISTORY_MESSAGES kadar mesajı gönder
+                    limited_history = st.session_state.messages[-MAX_HISTORY_MESSAGES-1:-1]
+                    sql_query = loop.run_until_complete(agent.generate_sql(prompt, history=limited_history))
+                    
+                    # Eğer doğrudan cevap ise (SQL değilse)
+                    if sql_query.startswith("[DIRECT_ANSWER]"):
+                        answer = sql_query.replace("[DIRECT_ANSWER]", "").strip()
+                        status.update(label="Sohbet Yanıtı", state="complete", expanded=False)
+                        st.markdown(answer)
+                        st.session_state.messages.append({"role": "assistant", "content": answer})
+                        save_history(username, st.session_state.messages)
+                    else:
+                        st.code(sql_query, language="sql")
+                        
+                        # Adım 2: SQL Çalıştır
+                        st.write("📊 Veritabanına soruluyor...")
+                        db_result = loop.run_until_complete(agent.execute_sql(sql_query))
+                        
+                        # Adım 3: Final Cevap
+                        st.write("🧠 Cevap hazırlanıyor..")
+                        # Sadece son MAX_HISTORY_MESSAGES kadar mesajı gönder
+                        limited_history = st.session_state.messages[-MAX_HISTORY_MESSAGES-1:-1]
+                        answer = loop.run_until_complete(agent.get_answer(prompt, sql_query, db_result, history=limited_history))
+                        
+                        status.update(label="Tamamlandı!", state="complete", expanded=False)
+                        
+                        # Sonucu göster
+                        st.markdown(answer)
+                        st.session_state.messages.append({
+                            "role": "assistant", 
+                            "content": answer, 
+                            "sql": sql_query
+                        })
+                        save_history(username, st.session_state.messages) # Kaydet
+                    
+                except Exception as e:
+                    st.error(f"Hata oluştu: {e}")
+                    status.update(label="Hata!", state="error")

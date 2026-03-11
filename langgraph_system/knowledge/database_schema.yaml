@@ -5,8 +5,14 @@ tables:
       It is a time-series report table, meaning the same product can appear in
       multiple rows across different dates.
 
-      When answering analytical questions (totals, performance, etc.), the model
-      should use aggregation functions such as SUM().
+      IMPORTANT ARCHITECTURE NOTE: The system collects multiple "snapshots" (cumulative records) 
+      throughout the same day. This means for any given (date, product) pair, there will be 
+      multiple rows representing periodic updates. 
+
+      DOUBLE AGGREGATION PATTERN (FOR TOTALS): To calculate accurate totals (e.g., total spend over a week), the model must:
+      1. Get the final snapshot for EACH day by using MAX(column) grouped by (sorgu_tarihi, urun_kodu).
+      2. Perform the final SUM() on these daily maximums.
+      Correct SQL Pattern: SELECT SUM(daily_max) FROM (SELECT MAX(harcanan_butce) as daily_max FROM product_report WHERE ... GROUP BY sorgu_tarihi, urun_kodu) as t
 
     columns:
       - "id: database row id. The highest id represents the newest record."
@@ -20,7 +26,7 @@ tables:
       - "harcama_getirisi: ROAS value. Türkçe: ROAS, getiri, harcama getirisi. Note: For aggregate data, calculate manually."
       - "gerceklesen_tbm: actual cost per click. Türkçe: TBM, tıklama başı maliyet."
       - "tbm_teklif: manually given CPC bid. Türkçe: teklif, TBM teklifi."
-      - "onerilen_tbm: marketplace recommended CPC bid. Türkçe: önerilen TBM. Not: Bu veri bir metindir (string), matematiksel kıyaslama yapılamaz."
+      - "onerilen_tbm: marketplace recommended CPC bid. Türkçe: önerilen TBM. CRITICAL: Bu sütun ham METİNDİR (string). Matematiksel işlem veya CAST YAPILAMAZ. Örnek format: 'Önerilen TBM: 8.61 ₺ (En iyi 9.77 ₺)'"
       - "satis_adet: number of units sold. Türkçe: satış adedi, kaç adet sattı."
       - "net_satis: net revenue from ONLY this product. O ürünün kendi satış geliri (adet * fiyat)."
       - "created_at: record creation timestamp."
@@ -33,14 +39,17 @@ sql_rules:
     The same product may appear multiple times across different dates.
 
   - |
-    If the user asks for totals such as total sales, total revenue,
-  - |
-    SNAPSHOT AGGREGATION RULE (CRITICAL):
-    This table contains multiple snapshots per day. Direct SUM() will cause OVER-COUNTING.
-    To get accurate totals (spend, sales, revenue), ALWAYS use this subquery pattern:
-    SELECT SUM(alias_name) FROM (SELECT MAX(column_name) as alias_name FROM product_report WHERE ... GROUP BY sorgu_tarihi, urun_kodu) as t
-    IMPORTANT: The outer query must aggregate (SUM/AVG) the SPECIFIC ALIAS defined in the subquery. 
-    Never use the original column name in the outer query's aggregation.
+    DOUBLE AGGREGATION RULE (CRITICAL):
+    This table contains multiple snapshots per day (cumulative records). 
+    Direct SUM() or direct column selection (unless using LIMIT 1) will cause OVER-COUNTING or RANDOM snapshots.
+    1. To get accurate across-day totals (GRAND TOTALS): Use the "MAX then SUM" pattern.
+       Pattern: SELECT SUM(daily_val) FROM (SELECT MAX(column) as daily_val FROM product_report GROUP BY sorgu_tarihi, urun_kodu) as t
+    2. To compare "Today vs Yesterday": You MUST get the MAX() snapshot for each day individually.
+       Correct Pattern for ROAS Comparison:
+       SELECT sorgu_tarihi, MAX(reklam_cirosu)/NULLIF(MAX(harcanan_butce), 0) as daily_roas 
+       FROM product_report WHERE sorgu_tarihi >= CURRENT_DATE - INTERVAL '2 days'
+       GROUP BY sorgu_tarihi, urun_kodu
+
   - |
     ROAS RULES:
     1. If the user asks for "Current ROAS" or "ROAS of a specific product", simply use the 'harcama_getirisi' column.
@@ -106,7 +115,108 @@ sql_rules:
     - gunluk_butce = 0 -> Campaign is PAUSED (KAPALI).
     - harcanan_butce = 0 AND gunluk_butce > 0 -> Campaign is ACTIVE but NOT SPENDING (TIKANMIŞ).
     - harcanan_butce > 0 AND satis_adet = 0 -> Campaign is SPENDING but NO SALES (PERFORMANS DÜŞÜK).
+      When diagnosing campaign status (KAPALI, TIKANMIŞ, PERFORMANS DÜŞÜK),
+    ALWAYS filter to the most recent date only:
+    WHERE sorgu_tarihi = (SELECT MAX(sorgu_tarihi) FROM product_report)
+    Querying all historical rows will cause false positives — a product that
+    spent nothing on one old day will incorrectly appear as TIKANMIŞ.
 
   - |
     If the SQL query returns no rows, respond that no data
     was found for the given criteria. Ensure responses are in TURKISH.
+
+  - |
+    PRODUCT SCOPE RULE (CRITICAL — STRICT ENFORCEMENT):
+    If the conversation context is focused on a specific product (e.g., user previously
+    asked about ZAYNABED160X200), ALL subsequent queries MUST include a
+    WHERE urun_kodu ILIKE '%<product_code>%' filter unless the user EXPLICITLY
+    asks for a portfolio-wide comparison.
+    
+    - NEVER silently switch to a different product from earlier in the conversation.
+    - Even if a previous query returned NULL or no data for the product, that product
+      remains in scope. Do NOT default back to a different product.
+    - If the previous query returned no data AND the user asks a follow-up, respond:
+      "Önceki sorguda bu ürün için veri bulunamıştı. Hangi ürün hakkında devam edelim?"
+    - Never run aggregate queries without a urun_kodu filter when a product is in scope.
+    - If it is ambiguous which product the user is referring to, ASK before querying.
+
+  - |
+    ROAS RANKING RULE:
+    When listing top/bottom N products by ROAS, always GROUP BY urun_kodu first
+    to avoid duplicate products in results.
+    Correct pattern:
+    SELECT urun_kodu, MAX(harcama_getirisi) as max_roas
+    FROM product_report
+    GROUP BY urun_kodu
+    ORDER BY max_roas DESC
+    LIMIT <N>
+
+  - |
+    EMPTY RESULT HANDLING:
+    If the DB returns [] (empty array) or all-null values for a specific product query,
+    respond ONLY with: "Bu ürün kodu için veritabanında kayıt bulunamadı."
+    Do NOT speculate about why data might be missing (e.g., "campaign not started",
+    "data not yet integrated"). Ask the user to verify the product code.
+
+  - |
+    ONERILEN_TBM RULE (CRITICAL — NO ARITHMETIC):
+    The 'onerilen_tbm' column is a raw TEXT field with a human-readable format.
+    Example value: "Önerilen TBM: 8.61 ₺ (En iyi 9.77 ₺)"
+    
+    NEVER use this column in:
+    - Arithmetic operations (subtraction, addition, etc.)
+    - CAST() or ::NUMERIC conversions directly
+    - Any SQL expression that expects a numeric type
+    
+    If the user asks to compare tbm_teklif with onerilen_tbm, extract the numeric
+    value using REGEXP first:
+    
+    REGEXP_REPLACE(onerilen_tbm, '[^0-9.]', '', 'g')::NUMERIC
+    
+    Example safe pattern:
+    SELECT
+      tbm_teklif,
+      REGEXP_REPLACE(onerilen_tbm, '[^0-9.]', '', 'g')::NUMERIC AS onerilen_tbm_numeric,
+      tbm_teklif - REGEXP_REPLACE(onerilen_tbm, '[^0-9.]', '', 'g')::NUMERIC AS fark
+    FROM product_report
+    WHERE urun_kodu ILIKE '%<product>%'
+    ORDER BY id DESC LIMIT 1;
+
+  - |
+    SQL ERROR HANDLING RULE (CRITICAL — HALLUCINATION PREVENTION):
+    If the database returns a SQL error (not an empty result [], but an actual error message),
+    you MUST follow these steps:
+    
+    1. Inform the user in plain Turkish what type of error occurred.
+       Example: "SQL sorgusunda bir hata oluştu: [hata türü]"
+    2. NEVER generate, estimate, invent, or recall any numeric values from memory
+       as if the query had succeeded.
+    3. Do NOT answer the original question as if data was returned.
+    4. Suggest a corrected query approach if possible.
+    
+    VIOLATION EXAMPLE (FORBIDDEN):
+    DB returns SQL error → Model says "TBM teklifi 2.30, önerilen 2.13, fark 0.17"
+    This is fabrication. There is no data source for these numbers. This is a critical failure.
+
+  - |
+    BUDGET DISTRIBUTION RULE:
+    If the user asks how to allocate a budget across products
+    (e.g., "500 TL dağıtayım", "bu parayı hangi ürünlere versem"),
+    use this pattern:
+    
+    1. Get the latest ROAS for ALL active products on the most recent date:
+       SELECT urun_kodu, MAX(harcama_getirisi) as roas, MAX(gunluk_butce) as gunluk_butce
+       FROM product_report
+       WHERE sorgu_tarihi = (SELECT MAX(sorgu_tarihi) FROM product_report)
+       GROUP BY urun_kodu
+       HAVING MAX(harcama_getirisi) > 0 AND MAX(gunluk_butce) > 0
+       ORDER BY roas DESC
+       LIMIT 5;
+    
+    2. From the results, suggest proportional allocation based on ROAS weights.
+       Example: If Product A has ROAS 4.0 and Product B has ROAS 2.0,
+       allocate 67% to A and 33% to B.
+    
+    NEVER return a single product or NULL result for a budget distribution question.
+    If no products have ROAS > 0, report this clearly and suggest investigating
+    campaign performance before allocating budget.
