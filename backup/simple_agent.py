@@ -3,6 +3,7 @@ import os
 import json
 import yaml
 import sys
+import re
 from datetime import datetime
 from contextlib import AsyncExitStack
 from dotenv import load_dotenv
@@ -33,6 +34,13 @@ class BackupAgent:
         with open(SCHEMA_PATH, "r", encoding="utf-8") as f:
             return yaml.dump(yaml.safe_load(f), allow_unicode=True)
 
+    def extract_product_code(self, text):
+        """Metin içindeki ürün kodlarını (X ile başlayan) bulur."""
+        if not text: return None
+        pattern = r"X[A-Z0-9]+"
+        matches = re.findall(pattern, text.upper())
+        return matches[0] if matches else None
+
     async def connect(self):
         if not os.path.exists(MCP_CONFIG_PATH):
             raise FileNotFoundError("mcp_config.json bulunamadı.")
@@ -54,7 +62,7 @@ class BackupAgent:
                 return True
         return False
 
-    async def generate_sql(self, user_query, history=None):
+    async def generate_sql(self, user_query, history=None, active_product=None):
         history_context = ""
         if history:
             history_context = "ÖNCEKİ KONUŞMALAR:\n"
@@ -62,8 +70,13 @@ class BackupAgent:
                 role = "Kullanıcı" if msg["role"] == "user" else "Bot"
                 history_context += f"{role}: {msg['content']}\n"
         
-        prompt = f"""Sen bir Reklam Optimizasyon Chat Asistanısın. Görevin, kullanıcının sorularını verilerle destekleyerek cevaplamak.
+        # Ürün Kilidi (Explicit Product State)
+        product_lock_guard = ""
+        if active_product:
+            product_lock_guard = f"\nKRİTİK BAĞLAM: Şu an {active_product} ürününe odaklıyız. Yazacağın SQL MUTLAKA bu ürünü filtrelemelidir.\n"
 
+        prompt = f"""Sen bir Reklam Optimizasyon Chat Asistanısın. Görevin, kullanıcının sorularını verilerle destekleyerek cevaplamak.
+{product_lock_guard}
 SQL ÜRETİM KURALLARI:
 1. Eğer kullanıcı belirli bir üründen bahsediyorsa (veya geçmişte bahsedilmişse ve soru "bunun", "o ürünün" gibi bağlamsal ise), SQL sorgusunda MUTLAKA `urun_kodu` filtresi (ILIKE veya =) kullanmalısın. TÜM tabloyu asla birleştirme (JOIN), sadece bağlamdaki ürüne odaklan.
 2. **DOUBLE AGGREGATION RULE**: Veritabanında her gün için birden fazla kümülatif snapshot bulunur. Toplam (Grand Total) hesaplarken önce her gün/ürün için `MAX()` almalı, sonra bu sonuçları dış sorguda `SUM()` yapmalısın.
@@ -109,7 +122,7 @@ USER QUESTION: {user_query}
         except Exception as e:
             return f"SQL Hatası: {e}"
 
-    async def get_answer(self, user_query, sql_query, db_result, history=None):
+    async def get_answer(self, user_query, sql_query, db_result, history=None, active_product=None):
         history_context = ""
         if history:
             history_context = "SOHBET GEÇMİSİ:\n"
@@ -120,7 +133,7 @@ USER QUESTION: {user_query}
         # Token limit güvenliği için veri çok büyükse kırp
         db_result_str = str(db_result)
         if len(db_result_str) > 20000:
-            truncated = db_result_str[0:20000]
+            truncated = db_result_str[:20000]
             db_result_str = f"{truncated}... [VERI COK UZUN OLDUGU ICIN KIRPILDI]"
 
         prompt = f"""Sen bir Reklam Analiz Chat Asistanısın. Kullanıcıya verileri yorumlayarak kısa, öz ve profesyonel cevaplar sunarsın.
@@ -141,6 +154,7 @@ KRİTİK MANTIK ÖZETİ:
 Sistemin çalıştırdığı SQL: {sql_query}
 Veritabanı Sonucu: {db_result_str}
 Kullanıcı Sorusu: {user_query}
+ODAK ÜRÜN (BAĞLAM): {active_product if active_product else 'Belirtilmedi (Gerekirse veriden çıkar)'}
 """
         response = self.client.models.generate_content(model=self.model_id, contents=prompt)
         return response.text

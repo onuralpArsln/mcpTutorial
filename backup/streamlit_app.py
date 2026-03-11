@@ -38,8 +38,19 @@ with st.sidebar:
     username = st.text_input("Kullanıcı Adı", placeholder="Örn: Onur").strip()
     if st.button("Sohbeti Temizle") and username:
         st.session_state.messages = []
+        st.session_state.active_product = None
         save_history(username, [])
         st.rerun()
+
+    st.divider()
+    active_prod = st.session_state.get("active_product")
+    if active_prod:
+        st.success(f"📌 **Odak Ürün:** {active_prod}")
+        if st.button("Kilidi Kaldır"):
+            st.session_state.active_product = None
+            st.rerun()
+    else:
+        st.info("📌 Ürün kilidi yok.")
 
 # --- 3. OTURUM HAFIZASINI HAZIRLA ---
 if "messages" not in st.session_state:
@@ -47,6 +58,9 @@ if "messages" not in st.session_state:
 
 if "current_user" not in st.session_state:
     st.session_state.current_user = None
+
+if "active_product" not in st.session_state:
+    st.session_state.active_product = None
 
 # Kullanıcı değişmişse veya yeni girilmişse geçmişi yükle
 if username and st.session_state.current_user != username:
@@ -87,6 +101,13 @@ else:
         with st.chat_message("user"):
             st.markdown(prompt)
 
+        # Ürün kodunu tara (Yeni ürün varsa kilidi güncelle)
+        new_product = agent.extract_product_code(prompt)
+        if new_product:
+            st.session_state.active_product = new_product
+            # Sayfayı yenilemeden UI'daki indicator'ın güncellenmesi zor olabilir 
+            # ancak işlem bitince zaten bir state change olacak.
+
         # Botun cevabını üret
         with st.chat_message("assistant"):
             with st.status("Düşünülüyor...", expanded=True) as status:
@@ -97,7 +118,12 @@ else:
                     st.write("⏳ SQL hazırlanıyor...")
                     # Sadece son MAX_HISTORY_MESSAGES kadar mesajı gönder
                     limited_history = st.session_state.messages[-MAX_HISTORY_MESSAGES-1:-1]
-                    sql_query = loop.run_until_complete(agent.generate_sql(prompt, history=limited_history))
+                    active_prod = st.session_state.active_product
+                    sql_query = loop.run_until_complete(agent.generate_sql(
+                        prompt, 
+                        history=limited_history, 
+                        active_product=active_prod
+                    ))
                     
                     # Eğer doğrudan cevap ise (SQL değilse)
                     if sql_query.startswith("[DIRECT_ANSWER]"):
@@ -117,7 +143,14 @@ else:
                         st.write("🧠 Cevap hazırlanıyor..")
                         # Sadece son MAX_HISTORY_MESSAGES kadar mesajı gönder
                         limited_history = st.session_state.messages[-MAX_HISTORY_MESSAGES-1:-1]
-                        answer = loop.run_until_complete(agent.get_answer(prompt, sql_query, db_result, history=limited_history))
+                        active_prod = st.session_state.active_product
+                        answer = loop.run_until_complete(agent.get_answer(
+                            prompt, 
+                            sql_query, 
+                            db_result, 
+                            history=limited_history,
+                            active_product=active_prod
+                        ))
                         
                         status.update(label="Tamamlandı!", state="complete", expanded=False)
                         

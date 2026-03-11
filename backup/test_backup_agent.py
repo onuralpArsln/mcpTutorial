@@ -29,6 +29,7 @@ async def run_backup_tests():
     print("🚀 Starting Contextual Backup Agent Test Suite...")
     agent = BackupAgent()
     history = [] # Mesaj geçmişi burada tutulacak
+    active_product = None # Odak ürün kilidi
     
     output_file = os.path.join(root_dir, "backup", "test_log_gem_backup.txt")
     
@@ -41,9 +42,16 @@ async def run_backup_tests():
             for i, q in enumerate(QUESTIONS, 1):
                 print(f"\n--- Question {i}/{len(QUESTIONS)}: {q} ---")
                 
-                # 1. SQL Üret (History ile)
+                # 1. SQL Üret (History + Product State ile)
                 print("⏳ Generating SQL...")
-                sql = await agent.generate_sql(q, history=history)
+                
+                # Yeni ürün tespiti ve kilit güncelleme
+                new_product = agent.extract_product_code(q)
+                if new_product:
+                    active_product = new_product
+                    print(f"🔒 Product Lock Updated: {active_product}")
+
+                sql = await agent.generate_sql(q, history=history, active_product=active_product)
                 
                 if sql.startswith("[DIRECT_ANSWER]"):
                     answer = sql.replace("[DIRECT_ANSWER]", "").strip()
@@ -56,9 +64,9 @@ async def run_backup_tests():
                     print("📊 Executing SQL...")
                     db_result = await agent.execute_sql(sql)
                     
-                    # 3. Cevap Üret (History ile)
+                    # 3. Cevap Üret (History + Product State ile)
                     print("🧠 Generating Answer...")
-                    answer = await agent.get_answer(q, sql, db_result, history=history)
+                    answer = await agent.get_answer(q, sql, db_result, history=history, active_product=active_product)
                 
                 # 4. Geçmişi Güncelle (Streamlit ile aynı yapı)
                 history.append({"role": "user", "content": q})

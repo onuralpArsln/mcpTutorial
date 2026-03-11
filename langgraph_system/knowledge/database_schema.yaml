@@ -39,16 +39,67 @@ sql_rules:
     The same product may appear multiple times across different dates.
 
   - |
-    DOUBLE AGGREGATION RULE (CRITICAL):
-    This table contains multiple snapshots per day (cumulative records). 
-    Direct SUM() or direct column selection (unless using LIMIT 1) will cause OVER-COUNTING or RANDOM snapshots.
-    1. To get accurate across-day totals (GRAND TOTALS): Use the "MAX then SUM" pattern.
-       Pattern: SELECT SUM(daily_val) FROM (SELECT MAX(column) as daily_val FROM product_report GROUP BY sorgu_tarihi, urun_kodu) as t
-    2. To compare "Today vs Yesterday": You MUST get the MAX() snapshot for each day individually.
-       Correct Pattern for ROAS Comparison:
-       SELECT sorgu_tarihi, MAX(reklam_cirosu)/NULLIF(MAX(harcanan_butce), 0) as daily_roas 
-       FROM product_report WHERE sorgu_tarihi >= CURRENT_DATE - INTERVAL '2 days'
-       GROUP BY sorgu_tarihi, urun_kodu
+    DOUBLE AGGREGATION RULE (CRITICAL — STRICT):
+
+    This table stores CUMULATIVE SNAPSHOTS multiple times per day.
+    A product with 100 TL daily spend may have 5 rows that day:
+    20 TL, 45 TL, 67 TL, 89 TL, 100 TL — all for the same day.
+    Direct SUM() would return 321 TL instead of 100 TL. THIS IS WRONG.
+
+    FORBIDDEN PATTERNS — NEVER USE THESE:
+    ❌ SELECT SUM(harcanan_butce) FROM product_report WHERE urun_kodu = '...'
+    ❌ SELECT SUM(gosterim_sayisi) FROM product_report WHERE urun_kodu = '...'
+    ❌ SELECT SUM(tiklanma_sayisi) FROM product_report WHERE urun_kodu = '...'
+    ❌ SELECT SUM(reklam_cirosu) FROM product_report WHERE urun_kodu = '...'
+    ❌ SELECT MAX(harcama_getirisi) FROM product_report (across all history — picks random best day)
+    ❌ SELECT AVG(gerceklesen_tbm) FROM product_report (without daily grouping)
+
+    MANDATORY PATTERN for ALL historical totals:
+    Step 1 — Get daily final value: MAX(column) GROUP BY sorgu_tarihi, urun_kodu
+    Step 2 — Sum the daily finals: SUM(daily_val)
+
+    CORRECT TEMPLATE for "temel metrikler" / product overview queries:
+    SELECT
+      urun_kodu,
+      SUM(daily_spend)        AS toplam_harcama,
+      SUM(daily_impressions)  AS toplam_gosterim,
+      SUM(daily_clicks)       AS toplam_tiklanma,
+      SUM(daily_revenue)      AS toplam_ciro,
+      SUM(daily_sales)        AS toplam_satis,
+      SUM(daily_revenue) / NULLIF(SUM(daily_spend), 0) AS gercek_roas
+    FROM (
+      SELECT
+        urun_kodu,
+        sorgu_tarihi,
+        MAX(harcanan_butce)   AS daily_spend,
+        MAX(gosterim_sayisi)  AS daily_impressions,
+        MAX(tiklanma_sayisi)  AS daily_clicks,
+        MAX(reklam_cirosu)    AS daily_revenue,
+        MAX(satis_adet)       AS daily_sales
+      FROM product_report
+      WHERE urun_kodu ILIKE '%<product>%'
+      GROUP BY urun_kodu, sorgu_tarihi
+    ) AS daily_finals
+    GROUP BY urun_kodu;
+
+    ROAS FOR OVERVIEW QUERIES:
+    NEVER use MAX(harcama_getirisi) for historical overview.
+    It picks the single best snapshot across all history — meaningless as a summary.
+    Instead calculate: SUM(daily_revenue) / NULLIF(SUM(daily_spend), 0)
+    This gives the true blended ROAS across all history.
+
+    TODAY vs YESTERDAY COMPARISON:
+    SELECT sorgu_tarihi, MAX(reklam_cirosu)/NULLIF(MAX(harcanan_butce), 0) as daily_roas
+    FROM product_report
+    WHERE urun_kodu ILIKE '%<product>%'
+      AND sorgu_tarihi >= CURRENT_DATE - INTERVAL '2 days'
+    GROUP BY sorgu_tarihi, urun_kodu
+    ORDER BY sorgu_tarihi DESC;
+
+    TRIGGER QUERIES — apply double aggregation pattern whenever user asks:
+    - "temel metrikler", "ürünü incele", "özet", "genel durum"
+    - "toplam harcama", "toplam satış", "toplam gösterim", "toplam ciro"
+    - Any aggregate across more than one day for a specific product
 
   - |
     ROAS RULES:
