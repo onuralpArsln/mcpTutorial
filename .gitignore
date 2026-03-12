@@ -1,3 +1,5 @@
 .env
 simpleMcpClient/*.txt
 backup/chat_history/
+backup/chat_history/*.json
+backup/chat_history/onur.json

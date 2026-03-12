@@ -17,10 +17,37 @@ CONTEXT_WINDOW = 2048
 REQUEST_TIMEOUT = 600 
 
 PROMPTS = {
-    "Intent Detection": "Classify the intent of the following user query into exactly one of these three categories: [SQL, RAG, CHAT]. User Query: 'How many active carriers bid on jobs last week?' Rule: Output ONLY the category name. Do not add any other words.",
-    "Tool Selection": "I have two tools: 'sql_db' and 'vector_rag'. Which tool should I use for this query: 'What is the standard company policy for handling delayed cargo?' Answer in exactly one sentence.",
-    "SQL Generation": "Given the database table 'cargo_jobs' with columns 'id', 'status', and 'carrier_id', write a PostgreSQL query to count how many jobs currently have the status 'bidding_open'. Output ONLY the SQL query, no markdown or explanations."
+    "Intent Detection (Vague)": (
+        "Classify the intent of the following user query into exactly one of these three categories: [SQL, RAG, CHAT]. "
+        "User Query: 'How many active carriers bid on jobs last week?' Rule: Output ONLY the category name. Do not add any other words."
+    ),
+    "Tool Selection (Vague)": (
+        "I have two tools: 'sql_db' and 'vector_rag'. Which tool should I use for this query: "
+        "'What is the standard company policy for handling delayed cargo?' Answer in exactly one sentence."
+    ),
+    "SQL Generation (Vague)": (
+        "Given the database table 'cargo_jobs' with columns 'id', 'status', and 'carrier_id', "
+        "write a PostgreSQL query to count how many jobs currently have the status 'bidding_open'. "
+        "Output ONLY the SQL query, no markdown or explanations."
+    ),
+    "Intent Detection (Easy)": (
+        "Classify the User Query into exactly one category: [SQL, RAG, CHAT]. "
+        "Definitions: SQL is for numerical data/counts; RAG is for policies/documents; CHAT is for greetings. "
+        "User Query: 'How many active carriers bid on jobs last week?' "
+        "Rule: Output ONLY the category name. No other words."
+    ),
+    "Tool Selection (Easy)": (
+        "I have two tools: 'sql_db' (for database stats) and 'vector_rag' (for company policies/rules). "
+        "Which tool should I use for this query: 'What is the standard company policy for handling delayed cargo?' "
+        "Answer in exactly one sentence starting with: 'The correct tool is...'"
+    ),
+    "SQL Generation (Easy)": (
+        "Based on the table 'cargo_jobs' [columns: id, status, carrier_id], "
+        "write a PostgreSQL query to count rows where status is 'bidding_open'. "
+        "Output ONLY the raw SQL string. Do not use markdown, backticks, or explanations."
+    )
 }
+
 
 def find_amd_gpu():
     """Finds the Linux sysfs path for the AMD GPU."""
