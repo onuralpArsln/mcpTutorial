@@ -4,9 +4,11 @@ import threading
 import psutil
 import glob
 import os
+import re  # New import for regex
 from datetime import datetime
 
-# 1. Define the logic tests
+# ... [PROMPTS, find_amd_gpu, and ResourceMonitor class remain the same] ...
+
 PROMPTS = {
     "Intent Detection": "Classify the intent of the following user query into exactly one of these three categories: [SQL, RAG, CHAT]. User Query: 'How many active carriers bid on jobs last week?' Rule: Output ONLY the category name. Do not add any other words.",
     "Tool Selection": "I have two tools: 'sql_db' and 'vector_rag'. Which tool should I use for this query: 'What is the standard company policy for handling delayed cargo?' Answer in exactly one sentence.",
@@ -19,7 +21,6 @@ def find_amd_gpu():
         return os.path.dirname(path)
     return None
 
-# Auto-detect the RX 580 path on startup
 AMD_GPU_PATH = find_amd_gpu()
 
 class ResourceMonitor:
@@ -29,34 +30,26 @@ class ResourceMonitor:
         self.max_cpu = 0.0
         self.max_ram = 0.0
         self.max_gpu = 0.0
-        self.max_vram = 0.0  # Tracked in Megabytes (MB)
+        self.max_vram = 0.0
 
     def measure(self):
-        # Initialize CPU percent
         psutil.cpu_percent(interval=None)
-        
         while self.keep_measuring:
-            # 1. Measure System CPU & RAM
             cpu = psutil.cpu_percent(interval=0.1)
             ram = psutil.virtual_memory().percent
-            
             if cpu > self.max_cpu: self.max_cpu = cpu
             if ram > self.max_ram: self.max_ram = ram
-
-            # 2. Measure AMD GPU & VRAM directly from Linux sysfs
             if AMD_GPU_PATH:
                 try:
                     with open(os.path.join(AMD_GPU_PATH, 'gpu_busy_percent'), 'r') as f:
                         gpu_util = float(f.read().strip())
-                    
                     with open(os.path.join(AMD_GPU_PATH, 'mem_info_vram_used'), 'r') as f:
                         vram_used_bytes = float(f.read().strip())
                         vram_used_mb = vram_used_bytes / (1024 * 1024)
-                        
                     if gpu_util > self.max_gpu: self.max_gpu = gpu_util
                     if vram_used_mb > self.max_vram: self.max_vram = vram_used_mb
                 except Exception:
-                    pass # Ignore read errors during quick sampling
+                    pass
 
 def get_installed_models():
     """Fetches the list of installed models from Ollama."""
@@ -71,7 +64,7 @@ def get_installed_models():
         return []
 
 def run_test(model_name, prompt):
-    """Runs a single prompt and tracks resources & time."""
+    """Runs a single prompt and tracks resources, stripping <think> tags."""
     monitor = ResourceMonitor()
     monitor_thread = threading.Thread(target=monitor.measure)
     monitor_thread.start()
@@ -82,17 +75,22 @@ def run_test(model_name, prompt):
             ['ollama', 'run', model_name, prompt],
             capture_output=True, text=True, check=True
         )
-        output = result.stdout.strip()
+        raw_output = result.stdout.strip()
+        
+        # --- CLEANING LOGIC ---
+        # This regex removes everything between <think> and </think> tags
+        # flags=re.DOTALL ensures it works even if the thinking spans multiple lines
+        clean_output = re.sub(r'<think>.*?</think>', '', raw_output, flags=re.DOTALL).strip()
+        # ----------------------
+        
     except subprocess.CalledProcessError as e:
-        output = f"[ERROR] Model failed to respond. Details: {e.stderr.strip()}"
+        clean_output = f"[ERROR] Model failed to respond. Details: {e.stderr.strip()}"
     
     duration = time.time() - start_time
-    
-    # Stop the monitor thread
     monitor.keep_measuring = False
     monitor_thread.join()
 
-    return output, duration, monitor
+    return clean_output, duration, monitor
 
 def main():
     models = get_installed_models()
@@ -116,7 +114,6 @@ def main():
             
             for test_name, prompt in PROMPTS.items():
                 print(f"  -> Running: {test_name}")
-                
                 output, duration, metrics = run_test(model, prompt)
                 
                 log_file.write(f"Test: {test_name}\n")
