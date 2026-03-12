@@ -1,13 +1,20 @@
-import subprocess
+import requests
 import time
 import threading
 import psutil
 import glob
 import os
-import re  # New import for regex
+import re
 from datetime import datetime
 
-# ... [PROMPTS, find_amd_gpu, and ResourceMonitor class remain the same] ...
+# --- CONFIGURATION ---
+OLLAMA_API_URL = "http://localhost:11434/api/generate"
+# 999 forces all layers to GPU. Ollama will spill to CPU only if VRAM is full.
+FORCE_GPU_LAYERS = 999 
+# Reduced context saves VRAM, ensuring more of the model fits on your RX 580.
+CONTEXT_WINDOW = 2048 
+# Increased timeout (10 mins) to prevent crashes during slow CPU/Hybrid runs.
+REQUEST_TIMEOUT = 600 
 
 PROMPTS = {
     "Intent Detection": "Classify the intent of the following user query into exactly one of these three categories: [SQL, RAG, CHAT]. User Query: 'How many active carriers bid on jobs last week?' Rule: Output ONLY the category name. Do not add any other words.",
@@ -24,7 +31,6 @@ def find_amd_gpu():
 AMD_GPU_PATH = find_amd_gpu()
 
 class ResourceMonitor:
-    """Monitors system CPU, RAM, and AMD GPU in a background thread."""
     def __init__(self):
         self.keep_measuring = True
         self.max_cpu = 0.0
@@ -48,43 +54,43 @@ class ResourceMonitor:
                         vram_used_mb = vram_used_bytes / (1024 * 1024)
                     if gpu_util > self.max_gpu: self.max_gpu = gpu_util
                     if vram_used_mb > self.max_vram: self.max_vram = vram_used_mb
-                except Exception:
+                except:
                     pass
 
 def get_installed_models():
-    """Fetches the list of installed models from Ollama."""
-    print("Fetching installed models...")
+    """Fetches model list from API."""
     try:
-        result = subprocess.run(['ollama', 'list'], capture_output=True, text=True, check=True)
-        lines = result.stdout.strip().split('\n')[1:]
-        models = [line.split()[0] for line in lines if line.strip()]
-        return models
-    except subprocess.CalledProcessError:
-        print("Error: Could not communicate with Ollama. Is the service running?")
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        return [m['name'] for m in response.json().get('models', [])]
+    except:
         return []
 
 def run_test(model_name, prompt):
-    """Runs a single prompt and tracks resources, stripping <think> tags."""
+    """Runs prompt with thinking-filter and long timeout."""
     monitor = ResourceMonitor()
     monitor_thread = threading.Thread(target=monitor.measure)
     monitor_thread.start()
 
+    payload = {
+        "model": model_name,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "num_gpu": FORCE_GPU_LAYERS,
+            "num_ctx": CONTEXT_WINDOW,
+            "temperature": 0
+        }
+    }
+
     start_time = time.time()
     try:
-        result = subprocess.run(
-            ['ollama', 'run', model_name, prompt],
-            capture_output=True, text=True, check=True
-        )
-        raw_output = result.stdout.strip()
-        
-        # --- CLEANING LOGIC ---
-        # This regex removes everything between <think> and </think> tags
-        # flags=re.DOTALL ensures it works even if the thinking spans multiple lines
-        clean_output = re.sub(r'<think>.*?</think>', '', raw_output, flags=re.DOTALL).strip()
-        # ----------------------
-        
-    except subprocess.CalledProcessError as e:
-        clean_output = f"[ERROR] Model failed to respond. Details: {e.stderr.strip()}"
+        response = requests.post(OLLAMA_API_URL, json=payload, timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        full_res = response.json().get('response', '')
+        # Remove <think>...</think> blocks
+        clean_output = re.sub(r'<think>.*?</think>', '', full_res, flags=re.DOTALL).strip()
+    except Exception as e:
+        clean_output = f"[ERROR] {str(e)}"
     
     duration = time.time() - start_time
     monitor.keep_measuring = False
@@ -95,40 +101,24 @@ def run_test(model_name, prompt):
 def main():
     models = get_installed_models()
     if not models:
-        print("No models found. Exiting.")
+        print("Error: No models found. Check if 'ollama serve' is active.")
         return
 
-    print(f"Found {len(models)} models: {', '.join(models)}")
-    log_filename = f"ollama_benchmark_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-    
-    with open(log_filename, 'w', encoding='utf-8') as log_file:
-        log_file.write(f"--- Ollama Model Benchmark ---\n")
-        log_file.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-        log_file.write(f"AMD GPU Detected: {'Yes' if AMD_GPU_PATH else 'No'}\n\n")
-        
+    log_name = f"benchmark_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    print(f"Starting benchmark on {len(models)} models. Saving to {log_name}")
+
+    with open(log_name, 'w', encoding='utf-8') as f:
+        f.write(f"Ollama GPU Benchmark - {datetime.now()}\n\n")
         for model in models:
-            print(f"\n[{model}] Starting tests...")
-            log_file.write(f"=========================================\n")
-            log_file.write(f"MODEL: {model}\n")
-            log_file.write(f"=========================================\n")
-            
-            for test_name, prompt in PROMPTS.items():
-                print(f"  -> Running: {test_name}")
-                output, duration, metrics = run_test(model, prompt)
-                
-                log_file.write(f"Test: {test_name}\n")
-                log_file.write(f"Time: {duration:.2f} seconds\n")
-                log_file.write(f"Peak CPU: {metrics.max_cpu}%\n")
-                log_file.write(f"Peak System RAM: {metrics.max_ram}%\n")
-                
-                if AMD_GPU_PATH:
-                    log_file.write(f"Peak AMD GPU Usage: {metrics.max_gpu}%\n")
-                    log_file.write(f"Peak VRAM Used: {metrics.max_vram:.2f} MB\n")
-                    
-                log_file.write(f"Output:\n{output}\n")
-                log_file.write(f"-----------------------------------------\n")
-                
-    print(f"\nDone! Results saved to {log_filename}")
+            print(f"Testing: {model}")
+            f.write(f"MODEL: {model}\n" + "="*30 + "\n")
+            for name, prompt in PROMPTS.items():
+                res, dur, m = run_test(model, prompt)
+                log_line = (f"Test: {name}\nTime: {dur:.2f}s | "
+                            f"GPU: {m.max_gpu}% | VRAM: {m.max_vram:.2f}MB\n"
+                            f"Verdict: {res}\n" + "-"*30 + "\n")
+                f.write(log_line)
+                print(f"  - {name}: {dur:.2f}s")
 
 if __name__ == "__main__":
     main()
