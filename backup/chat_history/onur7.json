@@ -1,7 +1,7 @@
 [
   {
     "role": "user",
-    "content": "en çok tıklanan ürün hangisi "
+    "content": "en çok tıklanan ürün hangisi? "
   },
   {
     "role": "assistant",
