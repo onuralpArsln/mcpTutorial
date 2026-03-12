@@ -62,6 +62,7 @@ class ResourceMonitor:
         self.keep_measuring = True
         self.max_cpu = 0.0
         self.max_ram = 0.0
+        self.max_ram_mb = 0.0
         self.max_gpu = 0.0
         self.max_vram = 0.0
 
@@ -69,9 +70,12 @@ class ResourceMonitor:
         psutil.cpu_percent(interval=None)
         while self.keep_measuring:
             cpu = psutil.cpu_percent(interval=0.1)
-            ram = psutil.virtual_memory().percent
+            virtual_mem = psutil.virtual_memory()
+            ram_pct = virtual_mem.percent
+            ram_mb = virtual_mem.used / (1024 * 1024)
             if cpu > self.max_cpu: self.max_cpu = cpu
-            if ram > self.max_ram: self.max_ram = ram
+            if ram_pct > self.max_ram: self.max_ram = ram_pct
+            if ram_mb > self.max_ram_mb: self.max_ram_mb = ram_mb
             if AMD_GPU_PATH:
                 try:
                     with open(os.path.join(AMD_GPU_PATH, 'gpu_busy_percent'), 'r') as f:
@@ -142,6 +146,7 @@ def main():
             for name, prompt in PROMPTS.items():
                 res, dur, m = run_test(model, prompt)
                 log_line = (f"Test: {name}\nTime: {dur:.2f}s | "
+                            f"CPU: {m.max_cpu:.1f}% | RAM: {m.max_ram_mb:.2f}MB ({m.max_ram:.1f}%) | "
                             f"GPU: {m.max_gpu}% | VRAM: {m.max_vram:.2f}MB\n"
                             f"Verdict: {res}\n" + "-"*30 + "\n")
                 f.write(log_line)
