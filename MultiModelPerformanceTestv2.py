@@ -124,6 +124,37 @@ BENCHMARK_SUITE = {
         "prompt": "Aşağıdaki listeyi [{'id': int, 'name': str}] formatında JSON'a dönüştür: 1-Mavi Puf, 2-Kırmızı Puf.",
         "expected": '[{"id": 1, "name": "Mavi Puf"}, {"id": 2, "name": "Kırmızı Puf"}]',
         "eval_type": "PASS/FAIL (JSON)"
+    },
+    # --- CONTEXTUAL AWARENESS SUITE (6 Multi-turn Scenarios) ---
+    "11. Contextual - Simple Recall": {
+        "prompt": "CHAT_HISTORY: H: 'XPUFFY4040 inceleyelim.' A: 'Tamam, ROAS 4.5.' H: 'Gosterim?' A: '12,000.' H: 'Tiklama?' A: '400.'\nUSER_QUERY: Hangi urun kodu uzerinde calisiyoruz?",
+        "expected": "XPUFFY4040",
+        "eval_type": "PASS/FAIL (Exact)"
+    },
+    "12. Contextual - Scope Continuity (SQL)": {
+        "prompt": f"Rules: {SQL_RULES}\nCHAT_HISTORY: H: 'XPET4545 performansina bakalim.' A: 'XPET4545 bugun 100 TL harcadı.' H: 'Satis var mi?' A: 'Hayir.'\nUSER_QUERY: Bu urun icin tum zamanlarin cirosunu getiren SQL'i yaz.",
+        "expected": "Must use Double Aggregation and filter for XPET4545",
+        "eval_type": "PASS/FAIL (SQL Snippet)"
+    },
+    "13. Contextual - Numerical Memory": {
+        "prompt": "CHAT_HISTORY: H: 'Baz fiyat 500 TL.' A: 'Kaydedildi.' H: '%20 indirim yap.' A: 'Fiyat 400 TL oldu.' H: '25 TL kargo ekle.'\nUSER_QUERY: Musteri bundan 2 tane alirsa toplam ne oder?",
+        "expected": "850 (425 * 2)",
+        "eval_type": "PASS/FAIL (Exact)"
+    },
+    "14. Contextual - Intent Switching": {
+        "prompt": "CHAT_HISTORY: H: 'SELECT * FROM product_report...' A: '[Data List]'. H: 'Bu verileri nasil okumaliyim?' A: '[Analysis]'.\nUSER_QUERY: Selam! Bugunun kisa ve arkadas canlisi bir ozetini gecer misin?",
+        "expected": "Friendly Turkish summary, No SQL/JSON",
+        "eval_type": "MANUAL_REVIEW"
+    },
+    "15. Contextual - Multi-Turn Rule Logic": {
+        "prompt": "CHAT_HISTORY: H: 'ROAS 2 altiysa kapat.' A: 'Not alindi.' H: 'Ama harcama 100 TL ustu olmali.' A: 'Kural: ROAS < 2 & Spend >= 100 -> KAPAT.' H: 'ROAS 10 ustu ise Harika de.'\nUSER_QUERY: Urun A: Harcama 80, ROAS 1.5. Urun B: Harcama 120, ROAS 15. Durumlari nedir?",
+        "expected": "A: Aktif (Harcama < 100), B: Harika (ROAS > 10)",
+        "eval_type": "MANUAL_REVIEW"
+    },
+    "16. Contextual - Complex SQL Synthesis": {
+        "prompt": f"Rules: {SQL_RULES}\nCHAT_HISTORY: H: 'RegEx hatirla: REGEXP_REPLACE(onerilen_tbm, \"[^0-9.]\", \"\", \"g\")::NUMERIC.' A: 'Sistem güncellendi.' H: 'Urun kodu \"KARE\" icerenleri al.' A: 'Filtre eklendi.' H: 'Sadece bugunun verisi olsun.'\nUSER_QUERY: Bu filtrelerle temizlenmis onerilen TBM ortalamasini getiren SQL'i yaz.",
+        "expected": "AVG(REGEXP_REPLACE), KARE filter, Latest Date filter",
+        "eval_type": "PASS/FAIL (SQL Snippet)"
     }
 }
 
