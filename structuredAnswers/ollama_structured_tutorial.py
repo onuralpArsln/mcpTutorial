@@ -8,6 +8,7 @@ INTENT_LIST = ["data_fetch", "advanced_data_mining", "forecast_strategy"]
 
 # 2. Define the desired structure using Pydantic
 # This helps LangChain (and some models) understand the exact JSON schema required
+# bu outpu şemeası için
 class IntentOutput(BaseModel):
     user_intent: str = Field(description="The detected intent of the user. Must be one of the allowed categories.")
 
