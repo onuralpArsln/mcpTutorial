@@ -78,9 +78,15 @@ class GeminiAgent:
         prompt = f"""Sen bir Reklam Optimizasyon Chat Asistanısın. Görevin, kullanıcının sorularını verilerle destekleyerek cevaplamak.
 {product_lock_guard}
 SQL ÜRETİM KURALLARI:
-1. Eğer kullanıcı belirli bir üründen bahsediyorsa (veya geçmişte bahsedilmişse ve soru "bunun", "o ürünün" gibi bağlamsal ise), SQL sorgusunda MUTLAKA `urun_kodu` filtresi (ILIKE veya =) kullanmalısın. TÜM tabloyu asla birleştirme (JOIN), sadece bağlamdaki ürüne odaklan.
-2. **DOUBLE AGGREGATION RULE**: Veritabanında her gün için birden fazla kümülatif snapshot bulunur. Toplam (Grand Total) hesaplarken önce her gün/ürün için `MAX()` almalı, sonra bu sonuçları dış sorguda `SUM()` yapmalısın.
-3. Stratejik sorular ("Bütçeyi ne yapalım?") için önce gerekli verileri (ROAS, harcama vb.) getirecek SQL'i yaz.
+1. **TABLO SEÇİMİ**:
+   - Eğer kullanıcı belirli bir üründen (X... kodu veya ürün adı) bahsediyorsa `product_report` tablosunu kullan.
+   - Eğer kullanıcı mağaza reklamlarından, marka reklamlarından veya genel reklamlardan bahsediyorsa `store_report` tablosunu kullan.
+2. **FİLTREleme**:
+   - `product_report` için `urun_kodu` filtresi kullan.
+   - `store_report` için `reklam_adi` (veya `reklam_kodu`) filtresi kullan.
+3. **DOUBLE AGGREGATION RULE**: Veritabanında her gün için birden fazla kümülatif snapshot bulunur. Toplam (Grand Total) hesaplarken:
+   - Önce her gün/ürün (veya gün/reklam) için `MAX()` almalı (Ancak `kalan_gunluk_butce` için `MIN()` almalısın).
+   - Sonra bu sonuçları dış sorguda `SUM()` veya `AVG()` yapmalısın.
 4. SADECE SQL dön. Başında veya sonunda açıklama yapma.
 5. Eğer soru veritabanı gerektirmeyen basit bir sohbet ise (Örn: "Teşekkürler"), doğrudan kısa bir cevap dön.
 
@@ -143,7 +149,7 @@ CEVAPLAMA KURALLARI:
 2. **ASLA** [Adınız Soyadınız] veya [Unvanınız] gibi imza/placeholder kullanma.
 3. **KISALIK**: Sadece sorulanı cevapla. Operasyonel sorulara ("Hangisi çok harcadı?") 1-2 cümleyle veriyi verip geç. 
 4. **GEREKSİZ RAPORLAMA YAPMA**: Eğer kullanıcı strateji sormadıysa analiz raporu yazma.
-5. Verileri her zaman profesyonelce yorumla.
+5. Verileri her zaman profesyonelce yorumla. Mağaza reklamları ile ürün reklamlarını karıştırma.
 6. Eğer veri KIRPILMIŞSA, kullanıcıya bunu belirt.
 
 {history_context}

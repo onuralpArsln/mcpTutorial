@@ -31,6 +31,30 @@ tables:
       - "net_satis: net revenue from ONLY this product. O ürünün kendi satış geliri (adet * fiyat)."
       - "created_at: record creation timestamp."
       - "gunluk_butce: daily advertising budget limit. Türkçe: günlük bütçe. 0 ise kampanya KAPALIDIR."
+
+  store_report:
+    description: |
+      This table contains advertising performance data for store-level (seller-level) ads.
+      Unlike product_report, these ads promote the store/seller directly, not a specific product.
+      It follows the same time-series and cumulative snapshot logic as product_report.
+
+      DOUBLE AGGREGATION PATTERN (FOR TOTALS): Same as product_report, but grouped by (sorgu_tarihi, reklam_kodu).
+
+    columns:
+      - "id: database row id. The highest id represents the newest record."
+      - "sorgu_tarihi: date when the data was collected (YYYY-MM-DD)."
+      - "sorgu_saati: time when the query was executed."
+      - "reklam_kodu: ad campaign code (UUID format). Türkçe: reklam kodu."
+      - "reklam_adi: verbal name given to the ad. Türkçe: reklam adı, kampanya adı."
+      - "gunluk_butce: maximum daily limit for the ad budget. Türkçe: günlük bütçe."
+      - "kalan_gunluk_butce: remaining daily budget limit. Türkçe: kalan bütçe, kalan limit. CRITICAL: Use MIN() to find the final remaining value for a day."
+      - "gosterim_sayisi: number of ad impressions. Türkçe: gösterim."
+      - "tiklanma_sayisi: number of ad clicks. Türkçe: tıklama."
+      - "satis_adet: number of store sales units generated through this ad. Türkçe: satış adedi."
+      - "harcama_getirisi: ROAS value. Türkçe: ROAS, getiri."
+      - "gerceklesen_gbm: Realized CPM (Cost Per Mille). Türkçe: GBM."
+      - "harcanan_butce: total money spent for the ad. Türkçe: harcama, harcanan."
+      - "reklam_cirosu: revenue generated through this ad. Türkçe: ciro, gelir."
 OUTPUT FORMAT RULE: |
   NEVER return raw JSON arrays to the user.
   Always convert DB results into readable Turkish sentences.
@@ -86,6 +110,30 @@ sql_rules:
       GROUP BY urun_kodu, sorgu_tarihi
     ) AS daily_finals
     GROUP BY urun_kodu;
+
+  - |
+    DOUBLE AGGREGATION RULE (FOR store_report):
+    Same logic as product_report, but for store-level ads.
+    CORRECT TEMPLATE:
+    SELECT
+      reklam_adi,
+      SUM(daily_spend)        AS toplam_harcama,
+      SUM(daily_revenue)      AS toplam_ciro,
+      SUM(daily_sales)        AS toplam_satis,
+      MIN(daily_remaining)    AS son_kalan_butce
+    FROM (
+      SELECT
+        reklam_adi,
+        sorgu_tarihi,
+        MAX(harcanan_butce)    AS daily_spend,
+        MAX(reklam_cirosu)     AS daily_revenue,
+        MAX(satis_adet)        AS daily_sales,
+        MIN(kalan_gunluk_butce) AS daily_remaining
+      FROM store_report
+      WHERE reklam_adi ILIKE '%<keyword>%'
+      GROUP BY reklam_adi, sorgu_tarihi
+    ) AS daily_finals
+    GROUP BY reklam_adi;
 
     ROAS FOR OVERVIEW QUERIES:
     NEVER use MAX(harcama_getirisi) for historical overview.

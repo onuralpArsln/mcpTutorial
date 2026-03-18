@@ -22,7 +22,11 @@ QUESTIONS = [
     # --- SON 3'LÜ BAĞLAMSAL SERİ ---
     "XPETMERD4DENYE ürününe odaklanalım. Bu ürünün temel metrikleri nedir?",
     "Şu anki TBM teklifi ile piyasadaki önerilen TBM (onerilen_tbm) arasında ne kadar fark var? (Pekala, bu ürün için)",
-    "Bu farkı kapatmak için teklifi artırırsak, mevcut günlük bütçemiz harcamayı karşılar mı?"
+    "Bu farkı kapatmak için teklifi artırırsak, mevcut günlük bütçemiz harcamayı karşılar mı?",
+    # --- STORE REPORT TESTLERİ ---
+    "Mağaza reklamlarını listeler misin?",
+    "En çok harcama yapan mağaza reklamı (reklam_adi) hangisi?",
+    "Mağaza reklamları arasında kalan günlük bütçesi en düşük olan hangisi?"
 ]
 
 async def run_backup_tests():
