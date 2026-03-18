@@ -67,7 +67,8 @@ async def list_tools(config_path: str):
                 
                 # 5. Execute a specific SQL query
                 #query = "SELECT * FROM product_report ORDER BY id DESC LIMIT 100"
-                query = "SELECT DISTINCT urun_kodu FROM product_report"
+                #query = "SELECT DISTINCT urun_kodu FROM product_report"
+                query = "SELECT DISTINCT reklam_kodu FROM store_report"
                 print(f"\n🚀 Executing query: {query}")
                 try:
                     query_result = await session.call_tool("query", arguments={"sql": query})
